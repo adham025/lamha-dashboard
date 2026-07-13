@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+
+/* Lamha admin theme — riffs on the app palette (spec §3), tuned for a dense
+   data dashboard rather than a Gen-Z app surface. */
+@theme {
+  --color-bg: #faf9f7;
+  --color-panel: #ffffff;
+  --color-border: #ece1ea;
+  --color-ink: #1a1120;
+  --color-muted: #6b6272;
+  --color-accent: #d6134f; /* Lamha deep berry */
+  --color-accent-soft: #fdeef3;
+  --color-secondary: #6d28d9;
+  --color-success: #087a4d;
+  --color-warn: #b45309;
+  --color-danger: #be183c;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
