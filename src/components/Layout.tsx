@@ -1,10 +1,18 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { clsx } from 'clsx'
-import { nav } from '../lib/nav'
+import { nav, canAccess } from '../lib/nav'
+import type { StaffMember } from '../lib/db'
 import { supabase } from '../lib/supabase'
 
-export default function Layout({ email }: { email: string }) {
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: 'Super admin',
+  studio: 'Studio',
+  support: 'Support',
+  print_ops: 'Print ops',
+}
+
+export default function Layout({ staff }: { staff: StaffMember }) {
   const navigate = useNavigate()
 
   async function signOut() {
@@ -12,9 +20,10 @@ export default function Layout({ email }: { email: string }) {
     navigate('/login', { replace: true })
   }
 
+  const items = nav.filter((n) => canAccess(n, staff.role))
+
   return (
     <div className="flex h-full">
-      {/* Sidebar */}
       <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-panel)]">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)] shadow-[0_0_12px_var(--color-accent)]" />
@@ -24,7 +33,7 @@ export default function Layout({ email }: { email: string }) {
           </span>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {nav.map(({ to, label, icon: Icon, isNew }) => (
+          {items.map(({ to, label, icon: Icon, isNew }) => (
             <NavLink
               key={to}
               to={to}
@@ -49,8 +58,13 @@ export default function Layout({ email }: { email: string }) {
           ))}
         </nav>
         <div className="border-t border-[var(--color-border)] p-3">
-          <div className="truncate px-2 pb-2 text-xs text-[var(--color-muted)]" title={email}>
-            {email}
+          <div className="px-2 pb-2">
+            <div className="truncate text-xs font-semibold" title={staff.email}>
+              {staff.full_name || staff.email}
+            </div>
+            <div className="text-[11px] text-[var(--color-accent)]">
+              {ROLE_LABEL[staff.role] ?? staff.role}
+            </div>
           </div>
           <button
             onClick={signOut}
@@ -62,7 +76,6 @@ export default function Layout({ email }: { email: string }) {
         </div>
       </aside>
 
-      {/* Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-8 py-8">
           <Outlet />

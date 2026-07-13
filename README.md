@@ -31,15 +31,46 @@ npm run dev
 3. Add the two env vars above under **Settings → Environment Variables**.
 4. Deploy. `vercel.json` already rewrites all routes to `index.html` for the SPA.
 
+## Sign in (test accounts)
+
+Staff-only, email + password. A non-staff account gets a "No dashboard access"
+screen.
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super admin | `adhamgalal70@gmail.com` | `Adham_2001` |
+| Studio | `studio@lamha.app` | `Studio_123` |
+| Support | `support@lamha.app` | `Support_123` |
+| Print ops | `printops@lamha.app` | `Print_123` |
+
+Nav and routes are **gated by role** — e.g. only super_admin sees *Studios &
+roles* and *Settings*; print_ops sees only Overview + Orders.
+
 ## What's here (spec §8)
 
-- **Auth gate** — Supabase email/password sign-in; staff-only.
-- **Sidebar shell** with every §8 section: Overview · AI usage & cost ·
-  Orders · Users · Moderation queue · Subscriptions & revenue · Promotions ·
-  Staff & roles · Settings.
-- **Overview** — KPI cards + a subscriptions-vs-prints revenue chart (Recharts,
-  sample data).
-- Other sections are connected shells describing their planned data + actions.
+- **Auth gate + roles** — resolves the caller's `staff` role; filters nav and
+  guards routes per role.
+- **Overview / Users / Orders / AI usage & cost** — **live** from Supabase
+  (real KPIs, tables, and per-model cost breakdown from the seeded data).
+- **Studios & roles** (super_admin) — create operator accounts, change roles,
+  enable/disable. Creation calls the `create-staff` Edge Function; role/disable
+  changes go through RLS directly.
+- **Moderation / Subscriptions / Promotions / Settings** — connected shells,
+  next to be wired.
+
+## Deploy the `create-staff` Edge Function (for the Create button)
+
+Creating an auth user needs the service_role key, so it runs server-side:
+
+```bash
+cd ../Lamha          # the app repo holds supabase/functions
+supabase login
+supabase link --project-ref sqfaiygsfphheoauxrpu
+supabase functions deploy create-staff
+```
+
+Until deployed, the create form shows a "not deployed yet" note; listing, role
+changes and enable/disable already work.
 
 ## Next step to make the data live
 

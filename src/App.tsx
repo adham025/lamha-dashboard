@@ -2,22 +2,26 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
+import { fetchStaff, type StaffMember } from './lib/db'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import NotAuthorized from './pages/NotAuthorized'
 import Overview from './pages/Overview'
+import Users from './pages/Users'
+import Orders from './pages/Orders'
+import AiCost from './pages/AiCost'
+import Studios from './pages/Studios'
 import {
-  AiCost,
-  Orders,
-  Users,
   Moderation,
   Subscriptions,
   Promotions,
-  Staff,
   Settings,
 } from './pages/sections'
+import { canAccess, nav } from './lib/nav'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
+  const [staff, setStaff] = useState<StaffMember | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -28,6 +32,25 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  // Once signed in, resolve the staff record (role). RLS returns only the
+  // caller's own row, so a non-staff account gets nothing → NotAuthorized.
+  useEffect(() => {
+    if (!session) {
+      setStaff(null)
+      return
+    }
+    let cancelled = false
+    fetchStaff()
+      .then((rows) => {
+        if (cancelled) return
+        setStaff(rows.find((r) => r.id === session.user.id && r.active) ?? null)
+      })
+      .catch(() => !cancelled && setStaff(null))
+    return () => {
+      cancelled = true
+    }
+  }, [session])
 
   if (!ready) {
     return (
@@ -46,18 +69,31 @@ export default function App() {
     )
   }
 
+  // Signed in but staff record not resolved yet.
+  if (staff === null) {
+    return <NotAuthorized email={session.user.email ?? ''} />
+  }
+
+  const role = staff.role
+  const allowed = (to: string) => {
+    const item = nav.find((n) => n.to === to)
+    return item ? canAccess(item, role) : true
+  }
+  const guard = (to: string, el: React.ReactNode) =>
+    allowed(to) ? el : <Navigate to="/" replace />
+
   return (
     <Routes>
-      <Route element={<Layout email={session.user.email ?? 'staff'} />}>
+      <Route element={<Layout staff={staff} />}>
         <Route path="/" element={<Overview />} />
-        <Route path="/ai-cost" element={<AiCost />} />
+        <Route path="/ai-cost" element={guard('/ai-cost', <AiCost />)} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/moderation" element={<Moderation />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/promotions" element={<Promotions />} />
-        <Route path="/staff" element={<Staff />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/users" element={guard('/users', <Users />)} />
+        <Route path="/moderation" element={guard('/moderation', <Moderation />)} />
+        <Route path="/subscriptions" element={guard('/subscriptions', <Subscriptions />)} />
+        <Route path="/promotions" element={guard('/promotions', <Promotions />)} />
+        <Route path="/studios" element={guard('/studios', <Studios />)} />
+        <Route path="/settings" element={guard('/settings', <Settings />)} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
