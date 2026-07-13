@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader, Panel, TableShell, RowDelete, thClass } from '../components/ui'
 import {
-  fetchUploads, fetchSubscriptions, fetchReferrals,
-  deleteRows, updateRow,
+  fetchUploads, fetchSubscriptions, fetchReferrals, fetchConfig,
+  deleteRows, updateRow, updateConfig, type ConfigRow,
 } from '../lib/db'
 
 const modColor: Record<string, string> = {
@@ -11,6 +12,7 @@ const modColor: Record<string, string> = {
   rejected: 'text-[var(--color-danger)]',
   pending: 'text-[var(--color-muted)]',
 }
+const fileName = (path: string) => path.split('/').pop() ?? path
 
 export function Moderation() {
   const qc = useQueryClient()
@@ -36,7 +38,8 @@ export function Moderation() {
       <TableShell>
         <thead>
           <tr className="border-b border-[var(--color-border)]">
-            <th className={thClass}>Upload</th>
+            <th className={thClass}>Customer</th>
+            <th className={thClass}>File</th>
             <th className={thClass}>Status</th>
             <th className={thClass}>Uploaded</th>
             <th className={thClass}>Review</th>
@@ -44,10 +47,11 @@ export function Moderation() {
           </tr>
         </thead>
         <tbody>
-          {isLoading && <tr><td colSpan={5} className="px-4 py-6 text-center text-[var(--color-muted)]">Loading…</td></tr>}
+          {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-[var(--color-muted)]">Loading…</td></tr>}
           {rows.map((u) => (
             <tr key={u.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg)]">
-              <td className="px-4 py-3 font-mono text-xs">{u.storage_path}</td>
+              <td className="px-4 py-3 font-medium">{u.profiles?.display_name ?? 'Guest'}</td>
+              <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted)]">{fileName(u.storage_path)}</td>
               <td className={'px-4 py-3 text-sm font-semibold capitalize ' + (modColor[u.moderation] ?? '')}>{u.moderation}</td>
               <td className="px-4 py-3 text-[var(--color-muted)]">{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
               <td className="px-4 py-3">
@@ -63,7 +67,7 @@ export function Moderation() {
               </td>
             </tr>
           ))}
-          {!isLoading && rows.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-[var(--color-muted)]">Nothing to review.</td></tr>}
+          {!isLoading && rows.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-[var(--color-muted)]">Nothing to review.</td></tr>}
         </tbody>
       </TableShell>
     </div>
@@ -95,7 +99,7 @@ export function Subscriptions() {
           {isLoading && <tr><td colSpan={5} className="px-4 py-6 text-center text-[var(--color-muted)]">Loading…</td></tr>}
           {(data ?? []).map((s) => (
             <tr key={s.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg)]">
-              <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted)]">{s.profile_id.slice(0, 8)}</td>
+              <td className="px-4 py-3 font-medium">{s.profiles?.display_name ?? 'Guest'}</td>
               <td className="px-4 py-3 font-semibold uppercase">{s.tier}</td>
               <td className="px-4 py-3">
                 <span className={'text-sm font-medium ' + (s.active ? 'text-[var(--color-success)]' : 'text-[var(--color-muted)]')}>
@@ -158,43 +162,65 @@ export function Promotions() {
   )
 }
 
+function ConfigField({ row, onSave }: { row: ConfigRow; onSave: (key: string, value: string) => void }) {
+  const [v, setV] = useState(row.value)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => setV(row.value), [row.value])
+
+  const commit = () => {
+    if (v !== row.value) {
+      onSave(row.key, v)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <label className="text-sm text-[var(--color-muted)]">{row.label}</label>
+      <div className="flex items-center gap-2">
+        {saved && <span className="text-xs text-[var(--color-success)]">Saved</span>}
+        <input
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          className="w-40 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1.5 text-right text-sm outline-none focus:border-[var(--color-accent)]"
+        />
+      </div>
+    </div>
+  )
+}
+
 export function Settings() {
+  const qc = useQueryClient()
+  const { data, isLoading } = useQuery({ queryKey: ['config'], queryFn: fetchConfig })
+  const save = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) => updateConfig(key, value),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['config'] }),
+  })
+
+  const groups = (data ?? []).reduce<Record<string, ConfigRow[]>>((acc, row) => {
+    ;(acc[row.grp] ??= []).push(row)
+    return acc
+  }, {})
+
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Project configuration." />
+      <PageHeader title="Settings" subtitle="Live configuration — changes save straight to the database." />
+      {isLoading && <Panel className="p-5 text-sm text-[var(--color-muted)]">Loading…</Panel>}
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel className="p-5">
-          <div className="text-sm font-semibold">Free tier</div>
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Lifetime trial credits</dt><dd className="font-medium tabular-nums">2</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Ad content rating</dt><dd className="font-medium">PG / Teen</dd></div>
-          </dl>
-        </Panel>
-        <Panel className="p-5">
-          <div className="text-sm font-semibold">Subscription tiers</div>
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Plus</dt><dd className="font-medium">EGP 69/mo · 30 credits</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Pro</dt><dd className="font-medium">EGP 149/mo · 60 credits</dd></div>
-          </dl>
-        </Panel>
-        <Panel className="p-5">
-          <div className="text-sm font-semibold">Print & delivery</div>
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Deposit</dt><dd className="font-medium">50% online + COD</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Standard delivery</dt><dd className="font-medium">EGP 35–60</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">Express delivery</dt><dd className="font-medium">EGP 80–120</dd></div>
-          </dl>
-        </Panel>
-        <Panel className="p-5">
-          <div className="text-sm font-semibold">Support</div>
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between"><dt className="text-[var(--color-muted)]">WhatsApp</dt><dd className="font-medium">+20 106 027 0197</dd></div>
-          </dl>
-        </Panel>
+        {Object.entries(groups).map(([grp, rows]) => (
+          <Panel key={grp} className="p-5">
+            <div className="mb-1 text-sm font-semibold">{grp}</div>
+            <div className="divide-y divide-[var(--color-border)]">
+              {rows.map((row) => (
+                <ConfigField key={row.key} row={row} onSave={(key, value) => save.mutate({ key, value })} />
+              ))}
+            </div>
+          </Panel>
+        ))}
       </div>
-      <p className="mt-4 text-xs text-[var(--color-muted)]">
-        These values will become editable once the config table is wired.
-      </p>
     </div>
   )
 }

@@ -65,6 +65,7 @@ export default function Orders() {
                 onChange={() => sel.toggleAll(rows.map((r) => r.id))}
               />
             </th>
+            <th className={thClass}>Customer</th>
             <th className={thClass}>Order</th>
             <th className={thClass}>Status</th>
             <th className={thClass}>Delivery</th>
@@ -77,14 +78,15 @@ export default function Orders() {
         </thead>
         <tbody>
           {isLoading && (
-            <tr><td colSpan={9} className="px-4 py-6 text-center text-[var(--color-muted)]">Loading…</td></tr>
+            <tr><td colSpan={10} className="px-4 py-6 text-center text-[var(--color-muted)]">Loading…</td></tr>
           )}
           {rows.map((o) => (
             <tr key={o.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg)]">
               <td className="px-4 py-3">
                 <Checkbox checked={sel.selected.has(o.id)} onChange={() => sel.toggle(o.id)} />
               </td>
-              <td className="px-4 py-3 font-mono text-xs">{o.id.slice(0, 8)}</td>
+              <td className="px-4 py-3 font-medium">{o.profiles?.display_name ?? 'Guest'}</td>
+              <td className="px-4 py-3 font-mono text-xs text-[var(--color-muted)]">{o.id.slice(0, 8)}</td>
               <td className="px-4 py-3">
                 <select
                   value={o.status}
@@ -105,7 +107,7 @@ export default function Orders() {
             </tr>
           ))}
           {!isLoading && rows.length === 0 && (
-            <tr><td colSpan={9} className="px-4 py-6 text-center text-[var(--color-muted)]">No orders.</td></tr>
+            <tr><td colSpan={10} className="px-4 py-6 text-center text-[var(--color-muted)]">No orders.</td></tr>
           )}
         </tbody>
       </TableShell>

@@ -20,6 +20,8 @@ export type AiJob = {
   created_at: string
 }
 
+type NamedProfile = { display_name: string | null } | null
+
 export type PrintOrder = {
   id: string
   status: string
@@ -31,6 +33,7 @@ export type PrintOrder = {
   kashier_status: string | null
   courier_tracking: string | null
   created_at: string
+  profiles: NamedProfile
 }
 
 export type StaffMember = {
@@ -42,7 +45,10 @@ export type StaffMember = {
   created_at: string
 }
 
-async function unwrap<T>(p: PromiseLike<{ data: T | null; error: unknown }>): Promise<T> {
+// Param is intentionally loose: PostgREST types embedded relations as arrays
+// even for to-one FKs (which return a single object at runtime), so we decouple
+// the resolved row shape from the caller-declared T and cast.
+async function unwrap<T>(p: PromiseLike<{ data: unknown; error: unknown }>): Promise<T> {
   const { data, error } = await p
   if (error) throw error
   return (data ?? []) as T
@@ -69,7 +75,7 @@ export const fetchOrders = () =>
     supabase
       .from('print_orders')
       .select(
-        'id, status, delivery_type, delivery_fee, product_total, deposit_amount, cod_collected, kashier_status, courier_tracking, created_at',
+        'id, status, delivery_type, delivery_fee, product_total, deposit_amount, cod_collected, kashier_status, courier_tracking, created_at, profiles(display_name)',
       )
       .order('created_at', { ascending: false }),
   )
@@ -97,6 +103,7 @@ export type Upload = {
   storage_path: string
   moderation: 'pending' | 'approved' | 'flagged' | 'rejected'
   created_at: string
+  profiles: NamedProfile
 }
 
 export type Subscription = {
@@ -105,6 +112,7 @@ export type Subscription = {
   tier: 'free' | 'plus' | 'pro'
   active: boolean
   renews_at: string | null
+  profiles: NamedProfile
 }
 
 export type Referral = {
@@ -114,11 +122,19 @@ export type Referral = {
   created_at: string
 }
 
+export type ConfigRow = {
+  key: string
+  value: string
+  label: string
+  grp: string
+  sort: number
+}
+
 export const fetchUploads = () =>
   unwrap<Upload[]>(
     supabase
       .from('uploads')
-      .select('id, profile_id, storage_path, moderation, created_at')
+      .select('id, profile_id, storage_path, moderation, created_at, profiles(display_name)')
       .order('created_at', { ascending: false }),
   )
 
@@ -126,9 +142,26 @@ export const fetchSubscriptions = () =>
   unwrap<Subscription[]>(
     supabase
       .from('subscriptions')
-      .select('id, profile_id, tier, active, renews_at')
+      .select('id, profile_id, tier, active, renews_at, profiles(display_name)')
       .order('renews_at', { ascending: false }),
   )
+
+export const fetchConfig = () =>
+  unwrap<ConfigRow[]>(
+    supabase
+      .from('app_config')
+      .select('key, value, label, grp, sort')
+      .order('grp', { ascending: true })
+      .order('sort', { ascending: true }),
+  )
+
+export async function updateConfig(key: string, value: string) {
+  const { error } = await supabase
+    .from('app_config')
+    .update({ value, updated_at: new Date().toISOString() })
+    .eq('key', key)
+  if (error) throw error
+}
 
 export const fetchReferrals = () =>
   unwrap<Referral[]>(
