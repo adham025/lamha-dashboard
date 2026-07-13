@@ -1,5 +1,4 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
 import { clsx } from 'clsx'
 import { nav, canAccess } from '../lib/nav'
 import type { StaffMember } from '../lib/db'
@@ -21,58 +20,65 @@ export default function Layout({ staff }: { staff: StaffMember }) {
   }
 
   const items = nav.filter((n) => canAccess(n, staff.role))
+  const initials = (staff.full_name || staff.email)
+    .split(/[\s@]/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join('')
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-panel)]">
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)] shadow-[0_0_12px_var(--color-accent)]" />
-          <span className="text-lg font-extrabold tracking-tight">Lamha</span>
-          <span className="ml-1 rounded-md bg-[var(--color-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-muted)]">
-            ADMIN
-          </span>
+      <aside className="flex w-60 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-panel)]">
+        <div className="px-5 py-5">
+          <div className="text-[17px] font-semibold tracking-tight">Lamha</div>
+          <div className="text-xs text-[var(--color-muted)]">Operations</div>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-2">
-          {items.map(({ to, label, icon: Icon, isNew }) => (
+
+        <nav className="flex-1 space-y-0.5 px-3">
+          {items.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors',
                   isActive
-                    ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                    ? 'bg-[var(--color-bg)] text-[var(--color-ink)]'
                     : 'text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]',
                 )
               }
             >
-              <Icon size={18} />
-              <span className="flex-1">{label}</span>
-              {isNew && (
-                <span className="rounded-full bg-[var(--color-accent-soft)] px-1.5 text-[10px] font-bold text-[var(--color-accent)]">
-                  new
-                </span>
+              {({ isActive }) => (
+                <>
+                  <Icon size={17} strokeWidth={isActive ? 2.2 : 1.8} />
+                  <span>{label}</span>
+                </>
               )}
             </NavLink>
           ))}
         </nav>
+
         <div className="border-t border-[var(--color-border)] p-3">
-          <div className="px-2 pb-2">
-            <div className="truncate text-xs font-semibold" title={staff.email}>
-              {staff.full_name || staff.email}
+          <div className="flex items-center gap-2.5 px-1 py-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg)] text-xs font-semibold text-[var(--color-ink)]">
+              {initials}
             </div>
-            <div className="text-[11px] text-[var(--color-accent)]">
-              {ROLE_LABEL[staff.role] ?? staff.role}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-medium" title={staff.email}>
+                {staff.full_name || staff.email}
+              </div>
+              <div className="text-[11px] text-[var(--color-muted)]">{ROLE_LABEL[staff.role] ?? staff.role}</div>
             </div>
+            <button
+              onClick={signOut}
+              title="Sign out"
+              className="rounded-md px-2 py-1 text-xs font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+            >
+              Sign out
+            </button>
           </div>
-          <button
-            onClick={signOut}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-danger)]"
-          >
-            <LogOut size={18} />
-            Sign out
-          </button>
         </div>
       </aside>
 

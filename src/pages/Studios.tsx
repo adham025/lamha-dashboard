@@ -67,9 +67,17 @@ export default function Studios() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['staff'] }),
   })
 
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('staff').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['staff'] }),
+  })
+
   return (
     <div>
-      <PageHeader title="Studios & roles" subtitle="Create operator accounts and manage their roles (§8)." />
+      <PageHeader title="Studios & roles" subtitle="Create operator accounts and manage their roles." />
 
       {/* Create form */}
       <Panel className="mb-6">
@@ -136,13 +144,21 @@ export default function Studios() {
                       {s.active ? 'Active' : 'Disabled'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setActive.mutate({ id: s.id, active: !s.active })}
-                      className="text-xs font-semibold text-[var(--color-muted)] hover:text-[var(--color-danger)]"
-                    >
-                      {s.active ? 'Disable' : 'Enable'}
-                    </button>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => setActive.mutate({ id: s.id, active: !s.active })}
+                        className="text-xs font-semibold text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+                      >
+                        {s.active ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(`Remove ${s.email} from staff?`)) remove.mutate(s.id) }}
+                        className="text-xs font-semibold text-[var(--color-muted)] hover:text-[var(--color-danger)]"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

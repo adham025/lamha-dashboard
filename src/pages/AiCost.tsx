@@ -24,16 +24,12 @@ export default function AiCost() {
 
   return (
     <div>
-      <PageHeader
-        title="AI usage & cost"
-        subtitle="Spend by model/provider — the dashboard that protects your margin (§8, §5)."
-        isNew
-      />
+      <PageHeader title="AI usage & cost" subtitle="Spend by model and provider." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total AI spend" value={isLoading ? '—' : USD(totalCost)} hint="all ai_jobs" accent />
+        <StatCard label="Total AI spend" value={isLoading ? '—' : USD(totalCost)} hint="all jobs" />
         <StatCard label="Total runs" value={isLoading ? '—' : String(jobs.length)} />
-        <StatCard label="Failed" value={isLoading ? '—' : String(failed)} hint="never charged a credit (§13.1)" />
+        <StatCard label="Failed" value={isLoading ? '—' : String(failed)} hint="not charged" />
         <StatCard
           label="Avg / run"
           value={isLoading || jobs.length === 0 ? '—' : USD(totalCost / jobs.length)}

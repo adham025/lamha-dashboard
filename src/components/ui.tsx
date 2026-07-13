@@ -1,25 +1,11 @@
 import type { ReactNode } from 'react'
 import { clsx } from 'clsx'
+import { Trash2, X } from 'lucide-react'
 
-export function PageHeader({
-  title,
-  subtitle,
-  isNew,
-}: {
-  title: string
-  subtitle?: string
-  isNew?: boolean
-}) {
+export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
-        {isNew && (
-          <span className="rounded-full bg-[var(--color-accent-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--color-accent)]">
-            new
-          </span>
-        )}
-      </div>
+      <h1 className="text-[22px] font-semibold tracking-tight text-[var(--color-ink)]">{title}</h1>
       {subtitle && <p className="mt-1 text-sm text-[var(--color-muted)]">{subtitle}</p>}
     </div>
   )
@@ -29,7 +15,7 @@ export function Panel({ className, children }: { className?: string; children: R
   return (
     <div
       className={clsx(
-        'rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-5',
+        'rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)]',
         className,
       )}
     >
@@ -42,65 +28,103 @@ export function StatCard({
   label,
   value,
   hint,
-  accent,
 }: {
   label: string
   value: string
   hint?: string
-  accent?: boolean
 }) {
   return (
-    <Panel>
-      <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-        {label}
-      </div>
-      <div
-        className={clsx(
-          'mt-2 text-3xl font-extrabold tabular-nums',
-          accent && 'text-[var(--color-accent)]',
-        )}
-      >
+    <Panel className="p-5">
+      <div className="text-[13px] font-medium text-[var(--color-muted)]">{label}</div>
+      <div className="mt-1.5 text-[26px] font-semibold tabular-nums text-[var(--color-ink)]">
         {value}
       </div>
-      {hint && <div className="mt-1 text-xs text-[var(--color-muted)]">{hint}</div>}
+      {hint && <div className="mt-0.5 text-xs text-[var(--color-muted)]">{hint}</div>}
     </Panel>
   )
 }
 
-/** A titled placeholder for §8 sections whose full build comes next. */
-export function Placeholder({
-  title,
-  subtitle,
-  isNew,
-  points,
-  source,
+/** A framed, scrollable table shell used by every data page. */
+export function TableShell({ children }: { children: ReactNode }) {
+  return (
+    <Panel>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">{children}</table>
+      </div>
+    </Panel>
+  )
+}
+
+export function Checkbox({
+  checked,
+  onChange,
+  indeterminate,
 }: {
-  title: string
-  subtitle: string
-  isNew?: boolean
-  points: string[]
-  source: string
+  checked: boolean
+  onChange: () => void
+  indeterminate?: boolean
 }) {
   return (
-    <div>
-      <PageHeader title={title} subtitle={subtitle} isNew={isNew} />
-      <Panel>
-        <div className="text-sm font-semibold text-[var(--color-ink)]">
-          Planned for this section ({source})
-        </div>
-        <ul className="mt-3 space-y-2">
-          {points.map((p) => (
-            <li key={p} className="flex gap-2 text-sm text-[var(--color-muted)]">
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
-              <span>{p}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 text-xs text-[var(--color-muted)]">
-          Data wiring lands once staff-role RLS policies (or an admin Edge Function) are added —
-          this shell is already connected to Supabase and Vercel-ready.
-        </p>
-      </Panel>
+    <input
+      type="checkbox"
+      checked={checked}
+      ref={(el) => {
+        if (el) el.indeterminate = !!indeterminate && !checked
+      }}
+      onChange={onChange}
+      onClick={(e) => e.stopPropagation()}
+      className="h-4 w-4 cursor-pointer rounded border-[var(--color-border)] accent-[var(--color-accent)]"
+    />
+  )
+}
+
+/** Sticky action bar shown when rows are selected. */
+export function BulkBar({
+  count,
+  onDelete,
+  onClear,
+  busy,
+}: {
+  count: number
+  onDelete: () => void
+  onClear: () => void
+  busy?: boolean
+}) {
+  if (count === 0) return null
+  return (
+    <div className="mb-3 flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] px-4 py-2.5">
+      <span className="text-sm font-medium">{count} selected</span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onClear}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-[var(--color-muted)] hover:bg-[var(--color-bg)]"
+        >
+          <X size={15} /> Clear
+        </button>
+        <button
+          onClick={onDelete}
+          disabled={busy}
+          className="flex items-center gap-1.5 rounded-lg bg-[var(--color-danger)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        >
+          <Trash2 size={15} /> {busy ? 'Deleting…' : 'Delete selected'}
+        </button>
+      </div>
     </div>
   )
 }
+
+/** Small ghost delete button for a single row. */
+export function RowDelete({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Delete"
+      className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-danger)]"
+    >
+      <Trash2 size={16} />
+    </button>
+  )
+}
+
+export const thClass =
+  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]'

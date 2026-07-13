@@ -45,15 +45,12 @@ export default function Overview() {
 
   return (
     <div>
-      <PageHeader
-        title="Overview"
-        subtitle="Live from your Supabase project — KPIs, generations and print revenue (§8)."
-      />
+      <PageHeader title="Overview" subtitle="Activity and revenue across the app." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Customers" value={loading ? '—' : String(profiles.data?.length ?? 0)} hint="app users (profiles)" />
         <StatCard label="Generations" value={loading ? '—' : String(jobs.data?.length ?? 0)} hint="ai_jobs all-time" />
-        <StatCard label="Print revenue" value={loading ? '—' : EGP(printsRevenue)} hint="deposits + COD" accent />
+        <StatCard label="Print revenue" value={loading ? '—' : EGP(printsRevenue)} hint="deposits + COD" />
         <StatCard label="Active subscribers" value={subs.isLoading ? '—' : String(subs.data ?? 0)} hint="Plus + Pro" />
       </div>
 

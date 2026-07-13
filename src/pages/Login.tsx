@@ -23,14 +23,12 @@ export default function Login() {
         onSubmit={submit}
         className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-7"
       >
-        <div className="mb-6 flex items-center gap-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)] shadow-[0_0_12px_var(--color-accent)]" />
-          <span className="text-lg font-extrabold tracking-tight">Lamha Admin</span>
+        <div className="mb-6">
+          <div className="text-[17px] font-semibold tracking-tight">Lamha</div>
+          <div className="text-xs text-[var(--color-muted)]">Operations</div>
         </div>
-        <h1 className="text-xl font-extrabold">Sign in</h1>
-        <p className="mt-1 mb-5 text-sm text-[var(--color-muted)]">
-          Staff access only.
-        </p>
+        <h1 className="text-xl font-semibold">Sign in</h1>
+        <p className="mt-1 mb-5 text-sm text-[var(--color-muted)]">Staff access only.</p>
 
         <label className="mb-1 block text-xs font-semibold text-[var(--color-muted)]">Email</label>
         <input
