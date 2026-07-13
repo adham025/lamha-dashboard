@@ -21,7 +21,8 @@ import { canAccess, nav } from './lib/nav'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
-  const [staff, setStaff] = useState<StaffMember | null>(null)
+  // undefined = role not resolved yet; null = resolved and NOT staff.
+  const [staff, setStaff] = useState<StaffMember | null | undefined>(undefined)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -37,10 +38,11 @@ export default function App() {
   // caller's own row, so a non-staff account gets nothing → NotAuthorized.
   useEffect(() => {
     if (!session) {
-      setStaff(null)
+      setStaff(undefined)
       return
     }
     let cancelled = false
+    setStaff(undefined) // show the loader while (re)checking, never the no-access flash
     fetchStaff()
       .then((rows) => {
         if (cancelled) return
@@ -52,13 +54,13 @@ export default function App() {
     }
   }, [session])
 
-  if (!ready) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted)]">
-        Loading…
-      </div>
-    )
-  }
+  const Loader = (
+    <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted)]">
+      Loading…
+    </div>
+  )
+
+  if (!ready) return Loader
 
   if (!session) {
     return (
@@ -69,7 +71,10 @@ export default function App() {
     )
   }
 
-  // Signed in but staff record not resolved yet.
+  // Signed in, role still being fetched — show the loader, not the no-access screen.
+  if (staff === undefined) return Loader
+
+  // Resolved and definitely not a staff account.
   if (staff === null) {
     return <NotAuthorized email={session.user.email ?? ''} />
   }
