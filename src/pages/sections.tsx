@@ -4,8 +4,8 @@ import { PageHeader, Panel } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
 import {
-  fetchUploads, fetchSubscriptions, fetchReferrals, fetchConfig,
-  deleteRows, updateRow, updateConfig,
+  fetchUploads, fetchSubscriptions, fetchReferrals, fetchConfig, fetchProfiles,
+  deleteRows, updateRow, insertRow, updateConfig,
   type Upload, type Subscription, type Referral, type ConfigRow,
 } from '../lib/db'
 
@@ -62,15 +62,21 @@ export function Moderation() {
 export function Subscriptions() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['subs'], queryFn: fetchSubscriptions })
+  const { data: profiles } = useQuery({ queryKey: ['profiles'], queryFn: fetchProfiles })
+  const [mode, setMode] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<Subscription | null>(null)
+  const close = () => { setMode(null); setEditing(null) }
 
   const del = useMutation({
     mutationFn: (ids: string[]) => deleteRows('subscriptions', ids),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['subs'] }),
   })
   const save = useMutation({
-    mutationFn: (v: FormValues) => updateRow('subscriptions', editing!.id, { tier: v.tier, active: v.active }),
-    onSuccess: () => { setEditing(null); qc.invalidateQueries({ queryKey: ['subs'] }) },
+    mutationFn: (v: FormValues) =>
+      mode === 'add'
+        ? insertRow('subscriptions', { profile_id: v.customer, tier: v.tier, active: v.active })
+        : updateRow('subscriptions', editing!.id, { tier: v.tier, active: v.active }),
+    onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['subs'] }) },
   })
 
   const columns: Column<Subscription>[] = [
@@ -79,8 +85,14 @@ export function Subscriptions() {
     { header: 'State', render: (s) => <span className={'font-medium ' + (s.active ? 'text-[var(--color-success)]' : 'text-[var(--color-muted)]')}>{s.active ? 'Active' : 'Churned'}</span> },
     { header: 'Renews', render: (s) => <span className="text-[var(--color-muted)]">{s.renews_at ? new Date(s.renews_at).toLocaleDateString('en-GB') : '—'}</span> },
   ]
-  const FIELDS: Field[] = [
-    { name: 'tier', label: 'Tier', type: 'select', required: true, options: [{ value: 'plus', label: 'Plus' }, { value: 'pro', label: 'Pro' }, { value: 'free', label: 'Free' }] },
+  const TIER_OPTS = [{ value: 'plus', label: 'Plus' }, { value: 'pro', label: 'Pro' }, { value: 'free', label: 'Free' }]
+  const ADD_FIELDS: Field[] = [
+    { name: 'customer', label: 'Customer', type: 'select', required: true, colSpan: 2, options: (profiles ?? []).map((p) => ({ value: p.id, label: p.display_name || 'Guest' })) },
+    { name: 'tier', label: 'Tier', type: 'select', required: true, options: TIER_OPTS },
+    { name: 'active', label: 'Active', type: 'switch' },
+  ]
+  const EDIT_FIELDS: Field[] = [
+    { name: 'tier', label: 'Tier', type: 'select', required: true, options: TIER_OPTS },
     { name: 'active', label: 'Active', type: 'switch' },
   ]
 
@@ -88,9 +100,13 @@ export function Subscriptions() {
     <div>
       <PageHeader title="Subscriptions" subtitle="Active and churned subscribers." />
       <DataTable rows={data ?? []} getId={(s) => s.id} columns={columns} loading={isLoading}
-        onEdit={setEditing} onDelete={(ids) => del.mutate(ids)} emptyText="No subscribers yet." />
-      <FormDrawer open={!!editing} onClose={() => setEditing(null)} title="Edit subscription" fields={FIELDS}
-        initial={editing ? { tier: editing.tier, active: editing.active } : undefined}
+        addLabel="New subscription" onAdd={() => setMode('add')}
+        onEdit={(s) => { setEditing(s); setMode('edit') }} onDelete={(ids) => del.mutate(ids)} emptyText="No subscribers yet." />
+      <FormDrawer open={mode !== null} onClose={close}
+        title={mode === 'add' ? 'New subscription' : 'Edit subscription'}
+        fields={mode === 'add' ? ADD_FIELDS : EDIT_FIELDS}
+        initial={mode === 'edit' && editing ? { tier: editing.tier, active: editing.active } : undefined}
+        submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending} onSubmit={(v) => save.mutate(v)} />
     </div>
   )
@@ -99,15 +115,20 @@ export function Subscriptions() {
 export function Promotions() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['referrals'], queryFn: fetchReferrals })
+  const [mode, setMode] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<Referral | null>(null)
+  const close = () => { setMode(null); setEditing(null) }
 
   const del = useMutation({
     mutationFn: (ids: string[]) => deleteRows('referrals', ids),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
   })
   const save = useMutation({
-    mutationFn: (v: FormValues) => updateRow('referrals', editing!.id, { code: v.code, rewarded: v.rewarded }),
-    onSuccess: () => { setEditing(null); qc.invalidateQueries({ queryKey: ['referrals'] }) },
+    mutationFn: (v: FormValues) =>
+      mode === 'add'
+        ? insertRow('referrals', { code: v.code, rewarded: v.rewarded })
+        : updateRow('referrals', editing!.id, { code: v.code, rewarded: v.rewarded }),
+    onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['referrals'] }) },
   })
 
   const columns: Column<Referral>[] = [
@@ -116,17 +137,21 @@ export function Promotions() {
     { header: 'Created', render: (r) => <span className="text-[var(--color-muted)]">{new Date(r.created_at).toLocaleDateString('en-GB')}</span> },
   ]
   const FIELDS: Field[] = [
-    { name: 'code', label: 'Code', required: true, colSpan: 2 },
+    { name: 'code', label: 'Code', required: true, colSpan: 2, placeholder: 'e.g. LAMHA-2K7' },
     { name: 'rewarded', label: 'Rewarded', type: 'switch' },
   ]
 
   return (
     <div>
-      <PageHeader title="Promotions" subtitle="Referral codes and their reward state." />
+      <PageHeader title="Promotions" subtitle="Referral & promo codes and their reward state." />
       <DataTable rows={data ?? []} getId={(r) => r.id} columns={columns} loading={isLoading}
-        onEdit={setEditing} onDelete={(ids) => del.mutate(ids)} emptyText="No referral codes yet." />
-      <FormDrawer open={!!editing} onClose={() => setEditing(null)} title="Edit referral code" fields={FIELDS}
-        initial={editing ? { code: editing.code, rewarded: editing.rewarded } : undefined}
+        addLabel="New code" onAdd={() => setMode('add')}
+        onEdit={(r) => { setEditing(r); setMode('edit') }} onDelete={(ids) => del.mutate(ids)} emptyText="No codes yet." />
+      <FormDrawer open={mode !== null} onClose={close}
+        title={mode === 'add' ? 'New promo code' : 'Edit code'}
+        fields={FIELDS}
+        initial={mode === 'edit' && editing ? { code: editing.code, rewarded: editing.rewarded } : undefined}
+        submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending} onSubmit={(v) => save.mutate(v)} />
     </div>
   )

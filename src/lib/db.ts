@@ -186,3 +186,9 @@ export async function updateRow(
   const { error } = await supabase.from(table).update(patch).eq('id', id)
   if (error) throw error
 }
+
+/** Generic insert (super_admin RLS). */
+export async function insertRow(table: string, values: Record<string, unknown>) {
+  const { error } = await supabase.from(table).insert(values)
+  if (error) throw error
+}

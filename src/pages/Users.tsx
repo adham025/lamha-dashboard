@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
-import { fetchProfiles, deleteRows, updateRow, type Profile } from '../lib/db'
+import { fetchProfiles, deleteRows, updateRow, insertRow, type Profile } from '../lib/db'
 
 const tierColor: Record<string, string> = {
   free: 'text-[var(--color-muted)]',
@@ -27,7 +27,9 @@ export default function Users() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['profiles'], queryFn: fetchProfiles })
   const [filter, setFilter] = useState<'all' | 'signed' | 'guest'>('all')
+  const [mode, setMode] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<Profile | null>(null)
+  const close = () => { setMode(null); setEditing(null) }
 
   const rows = (data ?? []).filter((p) => {
     if (filter === 'signed') return p.auth_method && p.auth_method !== 'anonymous'
@@ -41,8 +43,10 @@ export default function Users() {
   })
   const save = useMutation({
     mutationFn: (v: FormValues) =>
-      updateRow('profiles', editing!.id, { display_name: v.display_name, tier: v.tier }),
-    onSuccess: () => { setEditing(null); qc.invalidateQueries({ queryKey: ['profiles'] }) },
+      mode === 'add'
+        ? insertRow('profiles', { display_name: v.display_name, tier: v.tier, auth_method: 'manual' })
+        : updateRow('profiles', editing!.id, { display_name: v.display_name, tier: v.tier }),
+    onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['profiles'] }) },
   })
 
   const columns: Column<Profile>[] = [
@@ -77,16 +81,19 @@ export default function Users() {
         columns={columns}
         loading={isLoading}
         filters={filters}
-        onEdit={setEditing}
+        addLabel="New customer"
+        onAdd={() => setMode('add')}
+        onEdit={(p) => { setEditing(p); setMode('edit') }}
         onDelete={(ids) => del.mutate(ids)}
         emptyText="No users."
       />
       <FormDrawer
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        title="Edit customer"
+        open={mode !== null}
+        onClose={close}
+        title={mode === 'add' ? 'New customer' : 'Edit customer'}
         fields={FIELDS}
-        initial={editing ? { display_name: editing.display_name ?? '', tier: editing.tier } : undefined}
+        initial={mode === 'edit' && editing ? { display_name: editing.display_name ?? '', tier: editing.tier } : undefined}
+        submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending}
         onSubmit={(v) => save.mutate(v)}
       />
