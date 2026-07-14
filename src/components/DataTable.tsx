@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Eye } from 'lucide-react'
 import { Panel, Checkbox, BulkBar, RowDelete, thClass } from './ui'
 import { useSelection } from '../lib/useSelection'
 
@@ -17,6 +17,7 @@ export function DataTable<T>({
   filters,
   addLabel,
   onAdd,
+  onView,
   onEdit,
   onDelete,
   emptyText = 'Nothing here yet.',
@@ -28,13 +29,14 @@ export function DataTable<T>({
   filters?: ReactNode
   addLabel?: string
   onAdd?: () => void
+  onView?: (row: T) => void
   onEdit?: (row: T) => void
   onDelete?: (ids: string[]) => void
   emptyText?: string
 }) {
   const sel = useSelection<string>()
   const selectable = !!onDelete
-  const hasActions = !!onEdit || !!onDelete
+  const hasActions = !!onView || !!onEdit || !!onDelete
   const allChecked = rows.length > 0 && sel.count === rows.length
   const span = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)
 
@@ -106,6 +108,15 @@ export function DataTable<T>({
                     {hasActions && (
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          {onView && (
+                            <button
+                              onClick={() => onView(row)}
+                              title="View"
+                              className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
                           {onEdit && (
                             <button
                               onClick={() => onEdit(row)}

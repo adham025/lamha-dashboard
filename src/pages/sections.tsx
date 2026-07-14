@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader, Panel } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
+import { ImageViewer } from '../components/ImageViewer'
 import {
-  fetchUploads, fetchSubscriptions, fetchReferrals, fetchConfig, fetchProfiles,
+  fetchModerationMedia, fetchSubscriptions, fetchReferrals, fetchConfig, fetchProfiles,
   deleteRows, updateRow, insertRow, updateConfig,
-  type Upload, type Subscription, type Referral, type ConfigRow,
+  type UploadWithUrl, type Subscription, type Referral, type ConfigRow,
 } from '../lib/db'
 
 const fileName = (path: string) => path.split('/').pop() ?? path
@@ -19,16 +20,17 @@ const modColor: Record<string, string> = {
 
 export function Moderation() {
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery({ queryKey: ['uploads'], queryFn: fetchUploads })
-  const [editing, setEditing] = useState<Upload | null>(null)
+  const { data, isLoading } = useQuery({ queryKey: ['modmedia'], queryFn: fetchModerationMedia })
+  const [editing, setEditing] = useState<UploadWithUrl | null>(null)
+  const [viewing, setViewing] = useState<UploadWithUrl | null>(null)
 
   const del = useMutation({
     mutationFn: (ids: string[]) => deleteRows('uploads', ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['uploads'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['modmedia'] }),
   })
   const save = useMutation({
     mutationFn: (v: FormValues) => updateRow('uploads', editing!.id, { moderation: v.moderation }),
-    onSuccess: () => { setEditing(null); qc.invalidateQueries({ queryKey: ['uploads'] }) },
+    onSuccess: () => { setEditing(null); qc.invalidateQueries({ queryKey: ['modmedia'] }) },
   })
 
   const rows = (data ?? []).slice().sort((a, b) => {
@@ -36,9 +38,16 @@ export function Moderation() {
     return rank(a.moderation) - rank(b.moderation)
   })
 
-  const columns: Column<Upload>[] = [
+  const columns: Column<UploadWithUrl>[] = [
+    {
+      header: 'Photo',
+      render: (u) => (
+        <button onClick={() => setViewing(u)} className="block h-11 w-11 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg)]">
+          {u.url ? <img src={u.url} alt="" className="h-full w-full object-cover" /> : null}
+        </button>
+      ),
+    },
     { header: 'Customer', render: (u) => <span className="font-medium">{u.profiles?.display_name ?? 'Guest'}</span> },
-    { header: 'File', render: (u) => <span className="font-mono text-xs text-[var(--color-muted)]">{fileName(u.storage_path)}</span> },
     { header: 'Status', render: (u) => <span className={'font-semibold capitalize ' + (modColor[u.moderation] ?? '')}>{u.moderation}</span> },
     { header: 'Uploaded', render: (u) => <span className="text-[var(--color-muted)]">{new Date(u.created_at).toLocaleDateString('en-GB')}</span> },
   ]
@@ -51,10 +60,17 @@ export function Moderation() {
     <div>
       <PageHeader title="Moderation" subtitle="Review flagged uploads before any print ships." />
       <DataTable rows={rows} getId={(u) => u.id} columns={columns} loading={isLoading}
-        onEdit={setEditing} onDelete={(ids) => del.mutate(ids)} emptyText="Nothing to review." />
+        onView={setViewing} onEdit={setEditing} onDelete={(ids) => del.mutate(ids)} emptyText="Nothing to review." />
       <FormDrawer open={!!editing} onClose={() => setEditing(null)} title="Review upload" fields={FIELDS}
         initial={editing ? { moderation: editing.moderation } : undefined}
         busy={save.isPending} onSubmit={(v) => save.mutate(v)} />
+      <ImageViewer
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={`Upload — ${viewing?.profiles?.display_name ?? 'Guest'}`}
+        baseName={fileName(viewing?.storage_path ?? 'upload')}
+        images={viewing?.url ? [{ label: fileName(viewing.storage_path), url: viewing.url }] : []}
+      />
     </div>
   )
 }

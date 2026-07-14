@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
-import { fetchOrders, fetchProfiles, deleteRows, updateRow, insertRow, type PrintOrder } from '../lib/db'
+import { ImageViewer } from '../components/ImageViewer'
+import { fetchOrders, fetchProfiles, fetchOrderImages, deleteRows, updateRow, insertRow, type PrintOrder } from '../lib/db'
 
 const EGP = (n: number) => Math.round(n).toLocaleString()
 const statusColor: Record<string, string> = {
@@ -26,7 +27,14 @@ export default function Orders() {
   const [express, setExpress] = useState<'all' | 'standard' | 'express'>('all')
   const [mode, setMode] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<PrintOrder | null>(null)
+  const [viewOrder, setViewOrder] = useState<PrintOrder | null>(null)
   const close = () => { setMode(null); setEditing(null) }
+
+  const orderImages = useQuery({
+    queryKey: ['orderImages', viewOrder?.id],
+    queryFn: () => fetchOrderImages(viewOrder!.id),
+    enabled: !!viewOrder,
+  })
 
   const rows = (data ?? []).filter((o) => express === 'all' || o.delivery_type === express)
   const customerOpts = (profiles ?? []).map((p) => ({ value: p.id, label: p.display_name || 'Guest' }))
@@ -112,9 +120,18 @@ export default function Orders() {
         filters={filters}
         addLabel="New order"
         onAdd={() => setMode('add')}
+        onView={setViewOrder}
         onEdit={(o) => { setEditing(o); setMode('edit') }}
         onDelete={(ids) => del.mutate(ids)}
         emptyText="No orders."
+      />
+      <ImageViewer
+        open={!!viewOrder}
+        onClose={() => setViewOrder(null)}
+        title={`Order ${viewOrder?.id.slice(0, 8) ?? ''} — ${viewOrder?.profiles?.display_name ?? 'Guest'}`}
+        baseName={`order-${viewOrder?.id.slice(0, 8) ?? ''}`}
+        images={orderImages.data ?? []}
+        loading={orderImages.isLoading}
       />
       <FormDrawer
         open={mode !== null}

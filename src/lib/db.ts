@@ -192,3 +192,47 @@ export async function insertRow(table: string, values: Record<string, unknown>) 
   const { error } = await supabase.from(table).insert(values)
   if (error) throw error
 }
+
+// ---- Storage / images -----------------------------------------------------
+
+/** Batch-sign object paths in a bucket → Map<path, signedUrl>. */
+export async function signUrls(bucket: string, paths: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  const unique = [...new Set(paths)].filter(Boolean)
+  if (unique.length === 0) return map
+  const { data } = await supabase.storage.from(bucket).createSignedUrls(unique, 3600)
+  for (const d of data ?? []) if (d.signedUrl && d.path) map.set(d.path, d.signedUrl)
+  return map
+}
+
+export type UploadWithUrl = Upload & { url: string | null }
+
+/** Uploads for the moderation queue, each with a signed thumbnail URL. */
+export async function fetchModerationMedia(): Promise<UploadWithUrl[]> {
+  const rows = await fetchUploads()
+  const urls = await signUrls('uploads', rows.map((r) => r.storage_path))
+  return rows.map((r) => ({ ...r, url: urls.get(r.storage_path) ?? null }))
+}
+
+export type OrderImage = { label: string; url: string }
+
+/** Every result image attached to an order (multiple items = multiple images,
+ * possibly of different people). */
+export async function fetchOrderImages(orderId: string): Promise<OrderImage[]> {
+  const { data, error } = await supabase
+    .from('print_order_items')
+    .select('size_id, results(storage_path)')
+    .eq('order_id', orderId)
+  if (error) throw error
+  const items = (data ?? [])
+    .map((i: Record<string, unknown>) => {
+      const r = i.results as { storage_path?: string } | { storage_path?: string }[] | null
+      const path = Array.isArray(r) ? r[0]?.storage_path : r?.storage_path
+      return path ? { size_id: i.size_id as string, path } : null
+    })
+    .filter((x): x is { size_id: string; path: string } => !!x)
+  const urls = await signUrls('results', items.map((i) => i.path))
+  return items
+    .map((i) => ({ label: i.size_id, url: urls.get(i.path) }))
+    .filter((x): x is OrderImage => !!x.url)
+}
