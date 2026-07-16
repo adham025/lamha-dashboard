@@ -15,6 +15,7 @@ import {
   Moderation,
   Subscriptions,
   Promotions,
+  Notifications,
   Settings,
 } from './pages/sections'
 import { canAccess, nav } from './lib/nav'
@@ -97,6 +98,7 @@ export default function App() {
         <Route path="/moderation" element={guard('/moderation', <Moderation />)} />
         <Route path="/subscriptions" element={guard('/subscriptions', <Subscriptions />)} />
         <Route path="/promotions" element={guard('/promotions', <Promotions />)} />
+        <Route path="/notifications" element={guard('/notifications', <Notifications />)} />
         <Route path="/studios" element={guard('/studios', <Studios />)} />
         <Route path="/settings" element={guard('/settings', <Settings />)} />
         <Route path="/login" element={<Navigate to="/" replace />} />

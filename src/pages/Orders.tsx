@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
 import { PageHeader } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
 import { ImageViewer } from '../components/ImageViewer'
-import { fetchOrders, fetchProfiles, fetchOrderImages, deleteRows, updateRow, insertRow, type PrintOrder } from '../lib/db'
+import {
+  fetchOrders, fetchProfiles, fetchOrderImages, deleteRows, updateRow, insertRow,
+  syncKashierStatus, type PrintOrder,
+} from '../lib/db'
 
 const EGP = (n: number) => Math.round(n).toLocaleString()
 const statusColor: Record<string, string> = {
@@ -15,6 +19,14 @@ const statusColor: Record<string, string> = {
   delivered: 'text-[var(--color-success)]',
   refused: 'text-[var(--color-danger)]',
   cancelled: 'text-[var(--color-muted)]',
+}
+const paymentColor: Record<string, string> = {
+  captured: 'bg-emerald-100 text-[var(--color-success)]',
+  paid: 'bg-emerald-100 text-[var(--color-success)]',
+  pending: 'bg-amber-100 text-amber-700',
+  created: 'bg-amber-100 text-amber-700',
+  failed: 'bg-rose-100 text-[var(--color-danger)]',
+  declined: 'bg-rose-100 text-[var(--color-danger)]',
 }
 const STATUS_OPTS = ['pending_payment', 'deposit_paid', 'in_production', 'shipped', 'delivered', 'refused', 'cancelled']
   .map((s) => ({ value: s, label: s.replace(/_/g, ' ') }))
@@ -41,6 +53,10 @@ export default function Orders() {
 
   const del = useMutation({
     mutationFn: (ids: string[]) => deleteRows('print_orders', ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+  })
+  const sync = useMutation({
+    mutationFn: (orderId: string) => syncKashierStatus(orderId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
   })
   const save = useMutation({
@@ -73,6 +89,32 @@ export default function Orders() {
     { header: 'Customer', render: (o) => <span className="font-medium">{o.profiles?.display_name ?? 'Guest'}</span> },
     { header: 'Order', render: (o) => <span className="font-mono text-xs text-[var(--color-muted)]">{o.id.slice(0, 8)}</span> },
     { header: 'Status', render: (o) => <span className={'font-semibold capitalize ' + (statusColor[o.status] ?? '')}>{o.status.replace(/_/g, ' ')}</span> },
+    {
+      header: 'Payment',
+      render: (o) => {
+        const syncing = sync.isPending && sync.variables === o.id
+        return (
+          <div className="flex items-center gap-1.5">
+            <span
+              className={
+                'rounded-full px-2 py-0.5 text-xs font-semibold capitalize ' +
+                (paymentColor[o.kashier_status ?? ''] ?? 'bg-[var(--color-bg)] text-[var(--color-muted)]')
+              }
+            >
+              {o.kashier_status ?? 'unknown'}
+            </span>
+            <button
+              onClick={() => sync.mutate(o.id)}
+              disabled={syncing}
+              title="Re-check payment with Kashier"
+              className="rounded-md p-1 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)] disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            </button>
+          </div>
+        )
+      },
+    },
     { header: 'Delivery', render: (o) => <span className="capitalize text-[var(--color-muted)]">{o.delivery_type} · {EGP(o.delivery_fee)}</span> },
     { header: 'Product', render: (o) => <span className="tabular-nums">{EGP(o.product_total)}</span> },
     { header: 'Deposit', render: (o) => <span className="tabular-nums">{EGP(o.deposit_amount)}</span> },

@@ -6,8 +6,8 @@ import { FormDrawer, type Field, type FormValues } from '../components/FormDrawe
 import { ImageViewer } from '../components/ImageViewer'
 import {
   fetchModerationMedia, fetchSubscriptions, fetchReferrals, fetchConfig, fetchProfiles,
-  deleteRows, updateRow, insertRow, updateConfig,
-  type UploadWithUrl, type Subscription, type Referral, type ConfigRow,
+  fetchNotifications, deleteRows, updateRow, insertRow, updateConfig,
+  type UploadWithUrl, type Subscription, type Referral, type ConfigRow, type OrderNotification,
 } from '../lib/db'
 
 const fileName = (path: string) => path.split('/').pop() ?? path
@@ -169,6 +169,49 @@ export function Promotions() {
         initial={mode === 'edit' && editing ? { code: editing.code, rewarded: editing.rewarded } : undefined}
         submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending} onSubmit={(v) => save.mutate(v)} />
+    </div>
+  )
+}
+
+const notifTypeLabel: Record<string, string> = {
+  order_confirmed: 'Order confirmed',
+  order_shipped: 'Out for delivery',
+  order_delivered: 'Delivered',
+}
+const notifTypeColor: Record<string, string> = {
+  order_confirmed: 'bg-sky-100 text-sky-700',
+  order_shipped: 'bg-violet-100 text-[var(--color-secondary)]',
+  order_delivered: 'bg-emerald-100 text-[var(--color-success)]',
+}
+
+export function Notifications() {
+  const qc = useQueryClient()
+  const { data, isLoading } = useQuery({ queryKey: ['notifications'], queryFn: fetchNotifications })
+  const del = useMutation({
+    mutationFn: (ids: string[]) => deleteRows('notifications', ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  const columns: Column<OrderNotification>[] = [
+    { header: 'Customer', render: (n) => <span className="font-medium">{n.profiles?.display_name ?? 'Guest'}</span> },
+    {
+      header: 'Notification',
+      render: (n) => (
+        <span className={'rounded-full px-2 py-0.5 text-xs font-semibold ' + (notifTypeColor[n.type] ?? 'bg-[var(--color-bg)] text-[var(--color-muted)]')}>
+          {notifTypeLabel[n.type] ?? n.type}
+        </span>
+      ),
+    },
+    { header: 'Order', render: (n) => <span className="font-mono text-xs text-[var(--color-muted)]">{n.order_id?.slice(0, 8) ?? '—'}</span> },
+    { header: 'Seen', render: (n) => <span className={n.read ? 'text-[var(--color-muted)]' : 'font-semibold text-[var(--color-accent)]'}>{n.read ? 'Read' : 'Unread'}</span> },
+    { header: 'Sent', render: (n) => <span className="text-[var(--color-muted)]">{new Date(n.created_at).toLocaleString('en-GB')}</span> },
+  ]
+
+  return (
+    <div>
+      <PageHeader title="Notifications" subtitle="Order-status alerts sent to customers — confirmed on payment, out for delivery and delivered are set automatically whenever an order's status changes here or in the app." />
+      <DataTable rows={data ?? []} getId={(n) => n.id} columns={columns} loading={isLoading}
+        onDelete={(ids) => del.mutate(ids)} emptyText="No notifications sent yet." />
     </div>
   )
 }

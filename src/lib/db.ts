@@ -214,6 +214,36 @@ export async function fetchModerationMedia(): Promise<UploadWithUrl[]> {
   return rows.map((r) => ({ ...r, url: urls.get(r.storage_path) ?? null }))
 }
 
+/** Re-verifies a Kashier deposit with Kashier itself (never trusts a stale
+ * local value) — the same function the app calls, staff are also allowed to
+ * invoke it (see check-kashier-status's auth check). */
+export async function syncKashierStatus(orderId: string) {
+  const { data, error } = await supabase.functions.invoke('check-kashier-status', {
+    body: { order_id: orderId },
+  })
+  if (error) throw error
+  return data as { ok: boolean; status?: string; raw?: string }
+}
+
+export type NotificationType = 'order_confirmed' | 'order_shipped' | 'order_delivered' | string
+
+export type OrderNotification = {
+  id: string
+  type: NotificationType
+  order_id: string | null
+  read: boolean
+  created_at: string
+  profiles: NamedProfile
+}
+
+export const fetchNotifications = () =>
+  unwrap<OrderNotification[]>(
+    supabase
+      .from('notifications')
+      .select('id, type, order_id, read, created_at, profiles(display_name)')
+      .order('created_at', { ascending: false }),
+  )
+
 export type OrderImage = { label: string; url: string }
 
 /** Every result image attached to an order (multiple items = multiple images,
