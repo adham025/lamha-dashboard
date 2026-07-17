@@ -53,7 +53,6 @@ export default function Users() {
     { header: 'Name', render: (p) => <span className="font-medium">{p.display_name || 'Guest'}</span> },
     { header: 'Plan', render: (p) => <span className={'font-semibold uppercase ' + (tierColor[p.tier] ?? '')}>{p.tier}</span> },
     { header: 'Sign-up', render: (p) => <span className="text-[var(--color-muted)]">{p.auth_method ?? '—'}</span> },
-    { header: 'Referral', render: (p) => <span className="font-mono text-xs text-[var(--color-muted)]">{p.referral_code ?? '—'}</span> },
     { header: 'Joined', render: (p) => <span className="text-[var(--color-muted)]">{new Date(p.created_at).toLocaleDateString('en-GB')}</span> },
   ]
 

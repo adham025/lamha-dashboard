@@ -29,7 +29,7 @@ export const nav: NavItem[] = [
   { to: '/users', label: 'Users', icon: Users, roles: ['super_admin', 'studio', 'support'] },
   { to: '/moderation', label: 'Moderation', icon: ShieldAlert, roles: ['super_admin', 'studio', 'support'] },
   { to: '/subscriptions', label: 'Subscriptions', icon: CreditCard, roles: ['super_admin', 'studio'] },
-  { to: '/promotions', label: 'Promotions', icon: Ticket, roles: ['super_admin', 'studio'] },
+  { to: '/discounts', label: 'Discounts', icon: Ticket, roles: ['super_admin', 'studio'] },
   { to: '/notifications', label: 'Notifications', icon: Bell, roles: ['super_admin', 'studio', 'support'] },
   { to: '/studios', label: 'Studios & roles', icon: Building2, roles: ['super_admin'] },
   { to: '/settings', label: 'Settings', icon: Settings, roles: ['super_admin'] },

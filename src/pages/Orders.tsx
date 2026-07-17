@@ -116,6 +116,12 @@ export default function Orders() {
       },
     },
     { header: 'Delivery', render: (o) => <span className="capitalize text-[var(--color-muted)]">{o.delivery_type} · {EGP(o.delivery_fee)}</span> },
+    {
+      header: 'Discount',
+      render: (o) => o.discount_code
+        ? <span className="font-mono text-xs text-[var(--color-success)]">{o.discount_code} (-{EGP(o.discount_amount)})</span>
+        : <span className="text-[var(--color-muted)]">—</span>,
+    },
     { header: 'Product', render: (o) => <span className="tabular-nums">{EGP(o.product_total)}</span> },
     { header: 'Deposit', render: (o) => <span className="tabular-nums">{EGP(o.deposit_amount)}</span> },
     { header: 'COD', render: (o) => <span className="tabular-nums text-[var(--color-muted)]">{o.cod_collected != null ? EGP(o.cod_collected) : '—'}</span> },

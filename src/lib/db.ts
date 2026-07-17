@@ -6,7 +6,6 @@ export type Profile = {
   display_name: string | null
   tier: 'free' | 'plus' | 'pro'
   auth_method: string | null
-  referral_code: string | null
   created_at: string
 }
 
@@ -32,6 +31,8 @@ export type PrintOrder = {
   cod_collected: number | null
   kashier_status: string | null
   courier_tracking: string | null
+  discount_code: string | null
+  discount_amount: number
   created_at: string
   profiles: NamedProfile
 }
@@ -58,7 +59,7 @@ export const fetchProfiles = () =>
   unwrap<Profile[]>(
     supabase
       .from('profiles')
-      .select('id, display_name, tier, auth_method, referral_code, created_at')
+      .select('id, display_name, tier, auth_method, created_at')
       .order('created_at', { ascending: false }),
   )
 
@@ -75,7 +76,7 @@ export const fetchOrders = () =>
     supabase
       .from('print_orders')
       .select(
-        'id, status, delivery_type, delivery_fee, product_total, deposit_amount, cod_collected, kashier_status, courier_tracking, created_at, profiles(display_name)',
+        'id, status, delivery_type, delivery_fee, product_total, deposit_amount, cod_collected, kashier_status, courier_tracking, discount_code, discount_amount, created_at, profiles(display_name)',
       )
       .order('created_at', { ascending: false }),
   )
@@ -115,10 +116,16 @@ export type Subscription = {
   profiles: NamedProfile
 }
 
-export type Referral = {
+export type Discount = {
   id: string
   code: string
-  rewarded: boolean
+  kind: 'fixed' | 'percentage'
+  amount: number
+  active: boolean
+  usage_limit: number | null
+  times_used: number
+  min_order_amount: number | null
+  expires_at: string | null
   created_at: string
 }
 
@@ -163,11 +170,13 @@ export async function updateConfig(key: string, value: string) {
   if (error) throw error
 }
 
-export const fetchReferrals = () =>
-  unwrap<Referral[]>(
+export const fetchDiscounts = () =>
+  unwrap<Discount[]>(
     supabase
-      .from('referrals')
-      .select('id, code, rewarded, created_at')
+      .from('discounts')
+      .select(
+        'id, code, kind, amount, active, usage_limit, times_used, min_order_amount, expires_at, created_at',
+      )
       .order('created_at', { ascending: false }),
   )
 

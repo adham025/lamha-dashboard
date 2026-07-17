@@ -5,9 +5,9 @@ import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
 import { ImageViewer } from '../components/ImageViewer'
 import {
-  fetchModerationMedia, fetchSubscriptions, fetchReferrals, fetchConfig, fetchProfiles,
+  fetchModerationMedia, fetchSubscriptions, fetchDiscounts, fetchConfig, fetchProfiles,
   fetchNotifications, deleteRows, updateRow, insertRow, updateConfig,
-  type UploadWithUrl, type Subscription, type Referral, type ConfigRow, type OrderNotification,
+  type UploadWithUrl, type Subscription, type Discount, type ConfigRow, type OrderNotification,
 } from '../lib/db'
 
 const fileName = (path: string) => path.split('/').pop() ?? path
@@ -128,45 +128,91 @@ export function Subscriptions() {
   )
 }
 
-export function Promotions() {
+const kindLabel: Record<string, string> = { fixed: 'Fixed amount', percentage: 'Percentage' }
+
+/** Discount rows store amount/usage_limit/min_order_amount as numbers and
+ * expires_at as an ISO timestamp — the form only ever deals in strings, so
+ * translate at the edge rather than threading numeric types through FormDrawer. */
+function toDiscountPatch(v: FormValues) {
+  return {
+    code: String(v.code).trim().toUpperCase(),
+    kind: v.kind,
+    amount: Number(v.amount),
+    active: v.active,
+    usage_limit: v.usage_limit === '' ? null : Number(v.usage_limit),
+    min_order_amount: v.min_order_amount === '' ? null : Number(v.min_order_amount),
+    expires_at: v.expires_at === '' ? null : new Date(String(v.expires_at)).toISOString(),
+  }
+}
+
+export function Discounts() {
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery({ queryKey: ['referrals'], queryFn: fetchReferrals })
+  const { data, isLoading } = useQuery({ queryKey: ['discounts'], queryFn: fetchDiscounts })
   const [mode, setMode] = useState<'add' | 'edit' | null>(null)
-  const [editing, setEditing] = useState<Referral | null>(null)
+  const [editing, setEditing] = useState<Discount | null>(null)
   const close = () => { setMode(null); setEditing(null) }
 
   const del = useMutation({
-    mutationFn: (ids: string[]) => deleteRows('referrals', ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
+    mutationFn: (ids: string[]) => deleteRows('discounts', ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['discounts'] }),
   })
   const save = useMutation({
     mutationFn: (v: FormValues) =>
       mode === 'add'
-        ? insertRow('referrals', { code: v.code, rewarded: v.rewarded })
-        : updateRow('referrals', editing!.id, { code: v.code, rewarded: v.rewarded }),
-    onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['referrals'] }) },
+        ? insertRow('discounts', toDiscountPatch(v))
+        : updateRow('discounts', editing!.id, toDiscountPatch(v)),
+    onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['discounts'] }) },
   })
 
-  const columns: Column<Referral>[] = [
-    { header: 'Code', render: (r) => <span className="font-mono">{r.code}</span> },
-    { header: 'Rewarded', render: (r) => <span className={'font-medium ' + (r.rewarded ? 'text-[var(--color-success)]' : 'text-[var(--color-muted)]')}>{r.rewarded ? 'Yes' : 'Pending'}</span> },
-    { header: 'Created', render: (r) => <span className="text-[var(--color-muted)]">{new Date(r.created_at).toLocaleDateString('en-GB')}</span> },
+  const columns: Column<Discount>[] = [
+    { header: 'Code', render: (d) => <span className="font-mono">{d.code}</span> },
+    {
+      header: 'Discount',
+      render: (d) => (
+        <span className="font-semibold">
+          {d.kind === 'percentage' ? `${d.amount}%` : `${d.amount} EGP`}
+        </span>
+      ),
+    },
+    {
+      header: 'Usage',
+      render: (d) => <span className="text-[var(--color-muted)]">{d.times_used}{d.usage_limit !== null ? ` / ${d.usage_limit}` : ''}</span>,
+    },
+    { header: 'Min. order', render: (d) => <span className="text-[var(--color-muted)]">{d.min_order_amount !== null ? `${d.min_order_amount} EGP` : '—'}</span> },
+    { header: 'Expires', render: (d) => <span className="text-[var(--color-muted)]">{d.expires_at ? new Date(d.expires_at).toLocaleDateString('en-GB') : 'Never'}</span> },
+    { header: 'Active', render: (d) => <span className={'font-medium ' + (d.active ? 'text-[var(--color-success)]' : 'text-[var(--color-muted)]')}>{d.active ? 'Yes' : 'Off'}</span> },
   ]
   const FIELDS: Field[] = [
-    { name: 'code', label: 'Code', required: true, colSpan: 2, placeholder: 'e.g. LAMHA-2K7' },
-    { name: 'rewarded', label: 'Rewarded', type: 'switch' },
+    { name: 'code', label: 'Code', required: true, colSpan: 2, placeholder: 'e.g. WELCOME10' },
+    {
+      name: 'kind', label: 'Type', type: 'select', required: true,
+      options: Object.entries(kindLabel).map(([value, label]) => ({ value, label })),
+    },
+    { name: 'amount', label: 'Amount', type: 'number', required: true, placeholder: 'EGP, or % if percentage' },
+    { name: 'usage_limit', label: 'Usage limit', type: 'number', placeholder: 'Blank = unlimited' },
+    { name: 'min_order_amount', label: 'Minimum order (EGP)', type: 'number', placeholder: 'Blank = no minimum' },
+    { name: 'expires_at', label: 'Expires (YYYY-MM-DD)', placeholder: 'Blank = never' },
+    { name: 'active', label: 'Active', type: 'switch' },
   ]
 
   return (
     <div>
-      <PageHeader title="Promotions" subtitle="Referral & promo codes and their reward state." />
-      <DataTable rows={data ?? []} getId={(r) => r.id} columns={columns} loading={isLoading}
-        addLabel="New code" onAdd={() => setMode('add')}
-        onEdit={(r) => { setEditing(r); setMode('edit') }} onDelete={(ids) => del.mutate(ids)} emptyText="No codes yet." />
+      <PageHeader title="Discounts" subtitle="Fixed-amount or percentage codes customers enter at checkout." />
+      <DataTable rows={data ?? []} getId={(d) => d.id} columns={columns} loading={isLoading}
+        addLabel="New discount" onAdd={() => setMode('add')}
+        onEdit={(d) => { setEditing(d); setMode('edit') }} onDelete={(ids) => del.mutate(ids)} emptyText="No discount codes yet." />
       <FormDrawer open={mode !== null} onClose={close}
-        title={mode === 'add' ? 'New promo code' : 'Edit code'}
+        title={mode === 'add' ? 'New discount' : 'Edit discount'}
         fields={FIELDS}
-        initial={mode === 'edit' && editing ? { code: editing.code, rewarded: editing.rewarded } : undefined}
+        initial={mode === 'edit' && editing ? {
+          code: editing.code,
+          kind: editing.kind,
+          amount: String(editing.amount),
+          usage_limit: editing.usage_limit === null ? '' : String(editing.usage_limit),
+          min_order_amount: editing.min_order_amount === null ? '' : String(editing.min_order_amount),
+          expires_at: editing.expires_at ? editing.expires_at.slice(0, 10) : '',
+          active: editing.active,
+        } : mode === 'add' ? { active: true } : undefined}
         submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending} onSubmit={(v) => save.mutate(v)} />
     </div>

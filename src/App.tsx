@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { fetchStaff, type StaffMember } from './lib/db'
@@ -14,13 +14,17 @@ import Studios from './pages/Studios'
 import {
   Moderation,
   Subscriptions,
-  Promotions,
+  Discounts,
   Notifications,
   Settings,
 } from './pages/sections'
+import PrivacyPolicy from './pages/legal/PrivacyPolicy'
+import TermsOfService from './pages/legal/TermsOfService'
+import RefundPolicy from './pages/legal/RefundPolicy'
 import { canAccess, nav } from './lib/nav'
 
 export default function App() {
+  const location = useLocation()
   const [session, setSession] = useState<Session | null>(null)
   // undefined = role not resolved yet; null = resolved and NOT staff.
   const [staff, setStaff] = useState<StaffMember | null | undefined>(undefined)
@@ -61,6 +65,12 @@ export default function App() {
     </div>
   )
 
+  // Public legal pages — opened straight from the mobile app, no auth, no
+  // Supabase round-trip, checked before any of the session/staff gating below.
+  if (location.pathname === '/legal/privacy') return <PrivacyPolicy />
+  if (location.pathname === '/legal/terms') return <TermsOfService />
+  if (location.pathname === '/legal/refund') return <RefundPolicy />
+
   if (!ready) return Loader
 
   if (!session) {
@@ -97,7 +107,7 @@ export default function App() {
         <Route path="/users" element={guard('/users', <Users />)} />
         <Route path="/moderation" element={guard('/moderation', <Moderation />)} />
         <Route path="/subscriptions" element={guard('/subscriptions', <Subscriptions />)} />
-        <Route path="/promotions" element={guard('/promotions', <Promotions />)} />
+        <Route path="/discounts" element={guard('/discounts', <Discounts />)} />
         <Route path="/notifications" element={guard('/notifications', <Notifications />)} />
         <Route path="/studios" element={guard('/studios', <Studios />)} />
         <Route path="/settings" element={guard('/settings', <Settings />)} />
