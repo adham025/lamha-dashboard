@@ -32,3 +32,10 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Legal pages switch to this for the Arabic reading (matches the mobile
+   app's Arabic font, Almarai). */
+.font-arabic,
+.font-arabic * {
+  font-family: 'Almarai', ui-sans-serif, system-ui, sans-serif;
+}
