@@ -10,8 +10,9 @@ const en = (
     </Muted>
 
     <P>
-      <strong>Data controller:</strong> [COMPANY LEGAL NAME], Commercial Register
-      [COMMERCIAL REGISTER NO.], [REGISTERED ADDRESS], Egypt.
+      <strong>Data controller:</strong> [YOUR FULL LEGAL NAME], a sole proprietor trading
+      as "Lamha", Individual Commercial Register No. [COMMERCIAL REGISTER NO.],
+      [REGISTERED ADDRESS], Egypt.
       <br />
       <strong>Contact:</strong> WhatsApp +20 106 027 0197 · [SUPPORT EMAIL]
     </P>
@@ -159,7 +160,7 @@ const en = (
     <H2>14. Contact</H2>
     <P>
       Questions or requests: <strong>WhatsApp +20 106 027 0197</strong> · [SUPPORT EMAIL] ·
-      [COMPANY LEGAL NAME], [REGISTERED ADDRESS], Egypt.
+      [YOUR FULL LEGAL NAME], trading as "Lamha", [REGISTERED ADDRESS], Egypt.
     </P>
   </>
 )
@@ -173,8 +174,9 @@ const ar = (
     </Muted>
 
     <P>
-      <strong>الجهة المتحكمة في البيانات:</strong> [اسم الشركة القانوني]، سجل تجاري
-      [رقم السجل التجاري]، [العنوان المسجل]، جمهورية مصر العربية.
+      <strong>الجهة المتحكمة في البيانات:</strong> [اسمك الكامل كما هو مسجل]، منشأة
+      فردية باسم تجاري "لمحة"، سجل تجاري فردي رقم [رقم السجل التجاري]، [العنوان المسجل]،
+      جمهورية مصر العربية.
       <br />
       <strong>للتواصل:</strong> واتساب ٠١٠٦٠٢٧٠١٩٧+20 · [البريد الإلكتروني للدعم]
     </P>
@@ -313,7 +315,7 @@ const ar = (
     <H2>١٤. التواصل</H2>
     <P>
       للأسئلة أو الطلبات: <strong>واتساب +20 106 027 0197</strong> · [البريد الإلكتروني
-      للدعم] · [اسم الشركة القانوني]، [العنوان المسجل]، مصر.
+      للدعم] · [اسمك الكامل كما هو مسجل]، باسم تجاري "لمحة"، [العنوان المسجل]، مصر.
     </P>
   </>
 )

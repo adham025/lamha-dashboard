@@ -9,8 +9,9 @@ const en = (
     </Muted>
 
     <P>
-      <strong>Provider:</strong> [COMPANY LEGAL NAME], Commercial Register
-      [COMMERCIAL REGISTER NO.], Tax Card [TAX CARD NO.], [REGISTERED ADDRESS], Egypt.
+      <strong>Provider:</strong> [YOUR FULL LEGAL NAME], a sole proprietor trading as
+      "Lamha", Individual Commercial Register No. [COMMERCIAL REGISTER NO.], Tax Card
+      [TAX CARD NO.], [REGISTERED ADDRESS], Egypt.
       <br />
       <strong>Contact:</strong> WhatsApp +20 106 027 0197 · [SUPPORT EMAIL]
     </P>
@@ -177,8 +178,8 @@ const en = (
 
     <H2>18. Contact</H2>
     <P>
-      <strong>WhatsApp +20 106 027 0197</strong> · [SUPPORT EMAIL] · [COMPANY LEGAL NAME],
-      [REGISTERED ADDRESS], Egypt.
+      <strong>WhatsApp +20 106 027 0197</strong> · [SUPPORT EMAIL] · [YOUR FULL LEGAL
+      NAME], trading as "Lamha", [REGISTERED ADDRESS], Egypt.
     </P>
   </>
 )
@@ -191,8 +192,9 @@ const ar = (
     </Muted>
 
     <P>
-      <strong>مقدّم الخدمة:</strong> [اسم الشركة القانوني]، سجل تجاري
-      [رقم السجل التجاري]، بطاقة ضريبية [رقم البطاقة الضريبية]، [العنوان المسجل]، مصر.
+      <strong>مقدّم الخدمة:</strong> [اسمك الكامل كما هو مسجل]، منشأة فردية باسم تجاري
+      "لمحة"، سجل تجاري فردي رقم [رقم السجل التجاري]، بطاقة ضريبية
+      [رقم البطاقة الضريبية]، [العنوان المسجل]، مصر.
       <br />
       <strong>للتواصل:</strong> واتساب +20 106 027 0197 · [البريد الإلكتروني للدعم]
     </P>
@@ -355,8 +357,8 @@ const ar = (
 
     <H2>١٨. التواصل</H2>
     <P>
-      <strong>واتساب +20 106 027 0197</strong> · [البريد الإلكتروني للدعم] · [اسم الشركة
-      القانوني]، [العنوان المسجل]، مصر.
+      <strong>واتساب +20 106 027 0197</strong> · [البريد الإلكتروني للدعم] · [اسمك
+      الكامل كما هو مسجل]، باسم تجاري "لمحة"، [العنوان المسجل]، مصر.
     </P>
   </>
 )
