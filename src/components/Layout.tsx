@@ -5,10 +5,10 @@ import type { StaffMember } from '../lib/db'
 import { supabase } from '../lib/supabase'
 
 const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Super admin',
-  studio: 'Studio',
-  support: 'Support',
-  print_ops: 'Print ops',
+  super_admin: 'Owner',
+  studio: 'Editing',
+  support: 'Payments & support',
+  print_ops: 'Print & delivery',
 }
 
 export default function Layout({ staff }: { staff: StaffMember }) {

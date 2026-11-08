@@ -8,12 +8,15 @@ export default function Drawer({
   title,
   children,
   footer,
+  wide,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
   footer?: ReactNode
+  /** A wider panel, for content-heavy views like an order. */
+  wide?: boolean
 }) {
   // Close on Escape.
   useEffect(() => {
@@ -36,7 +39,9 @@ export default function Drawer({
       {/* Panel */}
       <aside
         className={
-          'absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-[var(--color-panel)] shadow-xl transition-transform duration-200 ' +
+          'absolute right-0 top-0 flex h-full w-full flex-col ' +
+          (wide ? 'max-w-xl ' : 'max-w-md ') +
+          ' bg-[var(--color-panel)] shadow-xl transition-transform duration-200 ' +
           (open ? 'translate-x-0' : 'translate-x-full')
         }
       >

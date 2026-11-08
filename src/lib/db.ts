@@ -4,38 +4,12 @@ import type { StaffRole } from './nav'
 export type Profile = {
   id: string
   display_name: string | null
-  tier: 'free' | 'plus' | 'pro'
+  email: string | null
   auth_method: string | null
   created_at: string
 }
 
-export type AiJob = {
-  id: number
-  model: string | null
-  provider: string | null
-  reason_id: string
-  cost_usd: number
-  status: 'queued' | 'processing' | 'complete' | 'failed'
-  created_at: string
-}
-
 type NamedProfile = { display_name: string | null } | null
-
-export type PrintOrder = {
-  id: string
-  status: string
-  delivery_type: 'standard' | 'express'
-  delivery_fee: number
-  product_total: number
-  deposit_amount: number
-  cod_collected: number | null
-  kashier_status: string | null
-  courier_tracking: string | null
-  discount_code: string | null
-  discount_amount: number
-  created_at: string
-  profiles: NamedProfile
-}
 
 export type StaffMember = {
   id: string
@@ -59,25 +33,7 @@ export const fetchProfiles = () =>
   unwrap<Profile[]>(
     supabase
       .from('profiles')
-      .select('id, display_name, tier, auth_method, created_at')
-      .order('created_at', { ascending: false }),
-  )
-
-export const fetchAiJobs = () =>
-  unwrap<AiJob[]>(
-    supabase
-      .from('ai_jobs')
-      .select('id, model, provider, reason_id, cost_usd, status, created_at')
-      .order('created_at', { ascending: false }),
-  )
-
-export const fetchOrders = () =>
-  unwrap<PrintOrder[]>(
-    supabase
-      .from('print_orders')
-      .select(
-        'id, status, delivery_type, delivery_fee, product_total, deposit_amount, cod_collected, kashier_status, courier_tracking, discount_code, discount_amount, created_at, profiles(display_name)',
-      )
+      .select('id, display_name, email, auth_method, created_at')
       .order('created_at', { ascending: false }),
   )
 
@@ -89,30 +45,12 @@ export const fetchStaff = () =>
       .order('created_at', { ascending: true }),
   )
 
-export const fetchSubscriptionsCount = async () => {
-  const { count, error } = await supabase
-    .from('subscriptions')
-    .select('*', { count: 'exact', head: true })
-    .eq('active', true)
-  if (error) throw error
-  return count ?? 0
-}
-
 export type Upload = {
   id: string
   profile_id: string
   storage_path: string
   moderation: 'pending' | 'approved' | 'flagged' | 'rejected'
   created_at: string
-  profiles: NamedProfile
-}
-
-export type Subscription = {
-  id: string
-  profile_id: string
-  tier: 'free' | 'plus' | 'pro'
-  active: boolean
-  renews_at: string | null
   profiles: NamedProfile
 }
 
@@ -143,14 +81,6 @@ export const fetchUploads = () =>
       .from('uploads')
       .select('id, profile_id, storage_path, moderation, created_at, profiles(display_name)')
       .order('created_at', { ascending: false }),
-  )
-
-export const fetchSubscriptions = () =>
-  unwrap<Subscription[]>(
-    supabase
-      .from('subscriptions')
-      .select('id, profile_id, tier, active, renews_at, profiles(display_name)')
-      .order('renews_at', { ascending: false }),
   )
 
 export const fetchConfig = () =>
@@ -223,18 +153,7 @@ export async function fetchModerationMedia(): Promise<UploadWithUrl[]> {
   return rows.map((r) => ({ ...r, url: urls.get(r.storage_path) ?? null }))
 }
 
-/** Re-verifies a Kashier deposit with Kashier itself (never trusts a stale
- * local value) — the same function the app calls, staff are also allowed to
- * invoke it (see check-kashier-status's auth check). */
-export async function syncKashierStatus(orderId: string) {
-  const { data, error } = await supabase.functions.invoke('check-kashier-status', {
-    body: { order_id: orderId },
-  })
-  if (error) throw error
-  return data as { ok: boolean; status?: string; raw?: string }
-}
-
-export type NotificationType = 'order_confirmed' | 'order_shipped' | 'order_delivered' | string
+export type NotificationType = string
 
 export type OrderNotification = {
   id: string
@@ -252,26 +171,3 @@ export const fetchNotifications = () =>
       .select('id, type, order_id, read, created_at, profiles(display_name)')
       .order('created_at', { ascending: false }),
   )
-
-export type OrderImage = { label: string; url: string }
-
-/** Every result image attached to an order (multiple items = multiple images,
- * possibly of different people). */
-export async function fetchOrderImages(orderId: string): Promise<OrderImage[]> {
-  const { data, error } = await supabase
-    .from('print_order_items')
-    .select('size_id, results(storage_path)')
-    .eq('order_id', orderId)
-  if (error) throw error
-  const items = (data ?? [])
-    .map((i: Record<string, unknown>) => {
-      const r = i.results as { storage_path?: string } | { storage_path?: string }[] | null
-      const path = Array.isArray(r) ? r[0]?.storage_path : r?.storage_path
-      return path ? { size_id: i.size_id as string, path } : null
-    })
-    .filter((x): x is { size_id: string; path: string } => !!x)
-  const urls = await signUrls('results', items.map((i) => i.path))
-  return items
-    .map((i) => ({ label: i.size_id, url: urls.get(i.path) }))
-    .filter((x): x is OrderImage => !!x.url)
-}
