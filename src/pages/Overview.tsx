@@ -1,92 +1,56 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts'
+import { Link } from 'react-router-dom'
 import { PageHeader, Panel, StatCard } from '../components/ui'
-import { fetchProfiles, fetchAiJobs, fetchOrders, fetchSubscriptionsCount } from '../lib/db'
+import { fetchOrdersFull } from '../lib/orders'
+import { canAccess, nav, type StaffRole } from '../lib/nav'
 
 const EGP = (n: number) => `EGP ${Math.round(n).toLocaleString()}`
-const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 
-export default function Overview() {
-  const profiles = useQuery({ queryKey: ['profiles'], queryFn: fetchProfiles })
-  const jobs = useQuery({ queryKey: ['aiJobs'], queryFn: fetchAiJobs })
-  const orders = useQuery({ queryKey: ['orders'], queryFn: fetchOrders })
-  const subs = useQuery({ queryKey: ['subsCount'], queryFn: fetchSubscriptionsCount })
+/** What needs doing right now, as a to-do list of the queues. */
+export default function Overview({ role }: { role: StaffRole }) {
+  const orders = useQuery({ queryKey: ['orders', 'all'], queryFn: () => fetchOrdersFull(), refetchInterval: 30_000 })
+  const all = orders.data ?? []
+  const count = (...statuses: string[]) => all.filter((o) => statuses.includes(o.status)).length
+  const loading = orders.isLoading
 
-  const loading = profiles.isLoading || jobs.isLoading || orders.isLoading
+  const todos = [
+    { to: '/payments', label: 'Payments to review', n: count('payment_review'), hint: 'screenshots waiting for a yes / no' },
+    { to: '/editing', label: 'To take to the studio', n: count('deposit_paid'), hint: 'paid, not yet sent' },
+    { to: '/editing', label: 'Change requests', n: count('revision_requested'), hint: 'customers asked for edits' },
+    { to: '/print', label: 'Ready to print', n: count('approved'), hint: 'approved by the customer' },
+    { to: '/print', label: 'Out for delivery', n: count('in_production', 'shipped'), hint: 'printing or on the road' },
+  ].filter((t) => {
+    const item = nav.find((n) => n.to === t.to)
+    return item ? canAccess(item, role) : true
+  })
 
-  // Revenue collected on prints = deposit + any COD collected.
-  const printsRevenue = (orders.data ?? []).reduce(
-    (s, o) => s + Number(o.deposit_amount) + Number(o.cod_collected ?? 0),
-    0,
-  )
-
-  // Build a 14-day series of generations + revenue.
-  const days: string[] = []
-  for (let i = 13; i >= 0; i--) days.push(dayKey(new Date(Date.now() - i * 86400_000).toISOString()))
-  const genByDay = Object.fromEntries(days.map((d) => [d, 0]))
-  const revByDay = Object.fromEntries(days.map((d) => [d, 0]))
-  for (const j of jobs.data ?? []) {
-    const k = dayKey(j.created_at)
-    if (k in genByDay) genByDay[k] += 1
-  }
-  for (const o of orders.data ?? []) {
-    const k = dayKey(o.created_at)
-    if (k in revByDay) revByDay[k] += Number(o.deposit_amount) + Number(o.cod_collected ?? 0)
-  }
-  const series = days.map((d) => ({ d, generations: genByDay[d], revenue: revByDay[d] }))
+  const inEditing = count('editing')
+  const waitingCustomer = count('preview_ready')
+  const owed = all
+    .filter((o) => ['approved', 'in_production', 'shipped'].includes(o.status))
+    .reduce((s, o) => s + Number(o.balance_due), 0)
 
   return (
     <div>
-      <PageHeader title="Overview" subtitle="Activity and revenue across the app." />
+      <PageHeader title="Today" subtitle="What needs doing right now." />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Customers" value={loading ? '—' : String(profiles.data?.length ?? 0)} hint="app users (profiles)" />
-        <StatCard label="Generations" value={loading ? '—' : String(jobs.data?.length ?? 0)} hint="ai_jobs all-time" />
-        <StatCard label="Print revenue" value={loading ? '—' : EGP(printsRevenue)} hint="deposits + COD" />
-        <StatCard label="Active subscribers" value={subs.isLoading ? '—' : String(subs.data ?? 0)} hint="Plus + Pro" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {todos.map((t) => (
+          <Link key={t.label} to={t.to} className="block">
+            <StatCard label={t.label} value={loading ? '—' : String(t.n)} hint={t.hint} />
+          </Link>
+        ))}
       </div>
 
-      <Panel className="mt-6">
-        <div className="mb-4 text-sm font-bold">Generations & print revenue — last 14 days</div>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={series} margin={{ left: -12, right: 8, top: 4 }}>
-              <defs>
-                <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#d6134f" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#d6134f" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gGen" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6d28d9" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#6d28d9" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ece1ea" vertical={false} />
-              <XAxis dataKey="d" tickLine={false} axisLine={false} fontSize={11} />
-              <YAxis tickLine={false} axisLine={false} fontSize={11} />
-              <Tooltip />
-              <Area type="monotone" dataKey="revenue" stroke="#d6134f" strokeWidth={2} fill="url(#gRev)" />
-              <Area type="monotone" dataKey="generations" stroke="#6d28d9" strokeWidth={2} fill="url(#gGen)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-3 flex gap-4 text-xs text-[var(--color-muted)]">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" /> Print revenue (EGP)
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[var(--color-secondary)]" /> Generations
-          </span>
-        </div>
-      </Panel>
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <StatCard label="At the studio" value={loading ? '—' : String(inEditing)} hint="being edited" />
+        <StatCard label="Waiting for customers" value={loading ? '—' : String(waitingCustomer)} hint="preview sent, no answer yet" />
+        <StatCard label="Cash to collect" value={loading ? '—' : EGP(owed)} hint="balances on approved orders" />
+      </div>
+
+      {!loading && all.length === 0 && (
+        <Panel className="mt-6 p-5 text-sm text-[var(--color-muted)]">No orders yet. They’ll show up here as customers place them.</Panel>
+      )}
     </div>
   )
 }

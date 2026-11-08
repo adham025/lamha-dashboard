@@ -8,7 +8,10 @@ import { fetchStaff, type StaffMember } from '../lib/db'
 import type { StaffRole } from '../lib/nav'
 
 const roleLabel: Record<StaffRole, string> = {
-  super_admin: 'Super admin', studio: 'Studio', support: 'Support', print_ops: 'Print ops',
+  super_admin: 'Owner (everything)',
+  studio: 'Editing (studio runs)',
+  support: 'Payments & support',
+  print_ops: 'Print & delivery',
 }
 const roleOptions = (Object.keys(roleLabel) as StaffRole[]).map((r) => ({ value: r, label: roleLabel[r] }))
 
@@ -74,7 +77,7 @@ export default function Studios() {
 
   return (
     <div>
-      <PageHeader title="Studios & roles" subtitle="Create operator accounts and manage their roles." />
+      <PageHeader title="Team" subtitle="Create logins for the people who run orders. Each role only sees what it needs: payments, editing, or print & delivery." />
       <DataTable
         rows={data ?? []}
         getId={(s) => s.id}
@@ -89,7 +92,7 @@ export default function Studios() {
       <FormDrawer
         open={mode !== null}
         onClose={close}
-        title={mode === 'add' ? 'New studio account' : 'Edit account'}
+        title={mode === 'add' ? 'New team login' : 'Edit account'}
         fields={mode === 'add' ? ADD_FIELDS : EDIT_FIELDS}
         initial={mode === 'edit' && editing
           ? { full_name: editing.full_name ?? '', role: editing.role, active: editing.active }

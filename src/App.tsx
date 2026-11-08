@@ -8,12 +8,12 @@ import Login from './pages/Login'
 import NotAuthorized from './pages/NotAuthorized'
 import Overview from './pages/Overview'
 import Users from './pages/Users'
-import Orders from './pages/Orders'
-import AiCost from './pages/AiCost'
 import Studios from './pages/Studios'
+import Catalogue from './pages/Catalogue'
+import Reports from './pages/Reports'
+import { Payments, Editing, PrintDelivery, AllOrders } from './pages/queues'
 import {
   Moderation,
-  Subscriptions,
   Discounts,
   Notifications,
   Settings,
@@ -101,12 +101,15 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout staff={staff} />}>
-        <Route path="/" element={<Overview />} />
-        <Route path="/ai-cost" element={guard('/ai-cost', <AiCost />)} />
-        <Route path="/orders" element={<Orders />} />
+        <Route path="/" element={<Overview role={role} />} />
+        <Route path="/payments" element={guard('/payments', <Payments role={role} />)} />
+        <Route path="/editing" element={guard('/editing', <Editing role={role} />)} />
+        <Route path="/print" element={guard('/print', <PrintDelivery role={role} />)} />
+        <Route path="/orders" element={<AllOrders role={role} />} />
         <Route path="/users" element={guard('/users', <Users />)} />
         <Route path="/moderation" element={guard('/moderation', <Moderation />)} />
-        <Route path="/subscriptions" element={guard('/subscriptions', <Subscriptions />)} />
+        <Route path="/catalogue" element={guard('/catalogue', <Catalogue />)} />
+        <Route path="/reports" element={guard('/reports', <Reports />)} />
         <Route path="/discounts" element={guard('/discounts', <Discounts />)} />
         <Route path="/notifications" element={guard('/notifications', <Notifications />)} />
         <Route path="/studios" element={guard('/studios', <Studios />)} />

@@ -5,22 +5,8 @@ import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
 import { fetchProfiles, deleteRows, updateRow, insertRow, type Profile } from '../lib/db'
 
-const tierColor: Record<string, string> = {
-  free: 'text-[var(--color-muted)]',
-  plus: 'text-[var(--color-accent)]',
-  pro: 'text-[var(--color-secondary)]',
-}
-
 const FIELDS: Field[] = [
   { name: 'display_name', label: 'Name', required: true, colSpan: 2, placeholder: 'Customer name' },
-  {
-    name: 'tier', label: 'Plan', type: 'select', required: true,
-    options: [
-      { value: 'free', label: 'Free' },
-      { value: 'plus', label: 'Plus' },
-      { value: 'pro', label: 'Pro' },
-    ],
-  },
 ]
 
 export default function Users() {
@@ -44,14 +30,14 @@ export default function Users() {
   const save = useMutation({
     mutationFn: (v: FormValues) =>
       mode === 'add'
-        ? insertRow('profiles', { display_name: v.display_name, tier: v.tier, auth_method: 'manual' })
-        : updateRow('profiles', editing!.id, { display_name: v.display_name, tier: v.tier }),
+        ? insertRow('profiles', { display_name: v.display_name, auth_method: 'manual' })
+        : updateRow('profiles', editing!.id, { display_name: v.display_name }),
     onSuccess: () => { close(); qc.invalidateQueries({ queryKey: ['profiles'] }) },
   })
 
   const columns: Column<Profile>[] = [
-    { header: 'Name', render: (p) => <span className="font-medium">{p.display_name || 'Guest'}</span> },
-    { header: 'Plan', render: (p) => <span className={'font-semibold uppercase ' + (tierColor[p.tier] ?? '')}>{p.tier}</span> },
+    { header: 'Name', render: (p) => <span className="font-medium">{p.display_name || '—'}</span> },
+    { header: 'Email', render: (p) => <span className="text-[var(--color-muted)]">{p.email ?? '—'}</span> },
     { header: 'Sign-up', render: (p) => <span className="text-[var(--color-muted)]">{p.auth_method ?? '—'}</span> },
     { header: 'Joined', render: (p) => <span className="text-[var(--color-muted)]">{new Date(p.created_at).toLocaleDateString('en-GB')}</span> },
   ]
@@ -73,7 +59,7 @@ export default function Users() {
 
   return (
     <div>
-      <PageHeader title="Users" subtitle="App customers, their plan and sign-up method." />
+      <PageHeader title="Customers" subtitle="People who use the app, and how they signed up." />
       <DataTable
         rows={rows}
         getId={(p) => p.id}
@@ -84,14 +70,14 @@ export default function Users() {
         onAdd={() => setMode('add')}
         onEdit={(p) => { setEditing(p); setMode('edit') }}
         onDelete={(ids) => del.mutate(ids)}
-        emptyText="No users."
+        emptyText="No customers yet."
       />
       <FormDrawer
         open={mode !== null}
         onClose={close}
         title={mode === 'add' ? 'New customer' : 'Edit customer'}
         fields={FIELDS}
-        initial={mode === 'edit' && editing ? { display_name: editing.display_name ?? '', tier: editing.tier } : undefined}
+        initial={mode === 'edit' && editing ? { display_name: editing.display_name ?? '' } : undefined}
         submitLabel={mode === 'add' ? 'Create' : 'Save'}
         busy={save.isPending}
         onSubmit={(v) => save.mutate(v)}
