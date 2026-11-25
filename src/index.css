@@ -1,20 +1,19 @@
 @import 'tailwindcss';
 
-/* Lamha admin theme — riffs on the app palette (spec §3), tuned for a dense
-   data dashboard rather than a Gen-Z app surface. */
+/* Lamha admin theme — same tokens as Zad (`zad_site` / `zad_super_admin`). */
 @theme {
-  --color-bg: #faf9f7;
+  --color-bg: #faf4ff;
   --color-panel: #ffffff;
-  --color-border: #ece1ea;
-  --color-ink: #1a1120;
-  --color-muted: #6b6272;
-  --color-accent: #d6134f; /* Lamha deep berry */
-  --color-accent-soft: #fdeef3;
-  --color-secondary: #6d28d9;
-  --color-success: #087a4d;
-  --color-warn: #b45309;
-  --color-danger: #be183c;
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-border: #e3e8f2;
+  --color-ink: #1b2027;
+  --color-muted: #8793a8;
+  --color-accent: #6c358e;
+  --color-accent-soft: #f0e5f8;
+  --color-secondary: #ffcc54;
+  --color-success: #16a34a;
+  --color-warn: #dc7a06;
+  --color-danger: #f05252;
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 }
 
 * {

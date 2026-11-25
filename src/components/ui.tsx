@@ -99,14 +99,14 @@ export function BulkBar({
           onClick={onClear}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-[var(--color-muted)] hover:bg-[var(--color-bg)]"
         >
-          <X size={15} /> Clear
+          <X size={16} strokeWidth={1.8} /> Clear
         </button>
         <button
           onClick={onDelete}
           disabled={busy}
           className="flex items-center gap-1.5 rounded-lg bg-[var(--color-danger)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
-          <Trash2 size={15} /> {busy ? 'Deleting…' : 'Delete selected'}
+          <Trash2 size={16} strokeWidth={1.8} /> {busy ? 'Deleting…' : 'Delete selected'}
         </button>
       </div>
     </div>
@@ -121,7 +121,7 @@ export function RowDelete({ onClick }: { onClick: () => void }) {
       title="Delete"
       className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-danger)]"
     >
-      <Trash2 size={16} />
+      <Trash2 size={16} strokeWidth={1.8} />
     </button>
   )
 }

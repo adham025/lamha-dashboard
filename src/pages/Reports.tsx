@@ -95,13 +95,13 @@ export default function Reports() {
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={series} margin={{ left: -12, right: 8, top: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ece1ea" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e3e8f2" vertical={false} />
               <XAxis dataKey="d" tickLine={false} axisLine={false} fontSize={11} />
               <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={11} />
               <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} fontSize={11} />
               <Tooltip />
-              <Bar yAxisId="left" dataKey="orders" fill="#6d28d9" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="right" dataKey="revenue" fill="#d6134f" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="left" dataKey="orders" fill="#ffcc54" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="right" dataKey="revenue" fill="#6c358e" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

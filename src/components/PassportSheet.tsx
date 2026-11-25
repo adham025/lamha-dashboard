@@ -99,7 +99,7 @@ export function PassportSheet({ orderCode }: { orderCode: string }) {
             onClick={download}
             className="mt-2 flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
           >
-            <Download size={14} /> Download sheet (PNG)
+            <Download size={16} strokeWidth={1.8} /> Download sheet (PNG)
           </button>
         </div>
       )}

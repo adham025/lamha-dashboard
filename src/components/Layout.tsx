@@ -3,6 +3,7 @@ import { clsx } from 'clsx'
 import { nav, canAccess } from '../lib/nav'
 import type { StaffMember } from '../lib/db'
 import { supabase } from '../lib/supabase'
+import { ICON_SIZE_NAV, ICON_STROKE, ICON_STROKE_ACTIVE } from '../lib/icons'
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Owner',
@@ -45,14 +46,17 @@ export default function Layout({ staff }: { staff: StaffMember }) {
                 clsx(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors',
                   isActive
-                    ? 'bg-[var(--color-bg)] text-[var(--color-ink)]'
+                    ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                     : 'text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={17} strokeWidth={isActive ? 2.2 : 1.8} />
+                  <Icon
+                    size={ICON_SIZE_NAV}
+                    strokeWidth={isActive ? ICON_STROKE_ACTIVE : ICON_STROKE}
+                  />
                   <span>{label}</span>
                 </>
               )}

@@ -51,7 +51,7 @@ export default function Drawer({
             onClick={onClose}
             className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]"
           >
-            <X size={18} />
+            <X size={16} strokeWidth={1.8} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>

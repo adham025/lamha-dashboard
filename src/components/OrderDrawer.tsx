@@ -301,7 +301,7 @@ function ItemCard({
 
       {canUpload && (
         <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-2.5 text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-bg)]">
-          <Upload size={15} />
+          <Upload size={16} strokeWidth={1.8} />
           {upload.isPending ? 'Uploading…' : result ? 'Upload a new version' : 'Upload edited photo'}
           <input
             type="file"
@@ -328,7 +328,7 @@ function Figure({ label, url, download, empty }: { label: string; url?: string; 
             <img src={url} alt={label} className="aspect-[4/5] w-full rounded-lg border border-[var(--color-border)] object-cover" />
           </a>
           <a href={url} download={download} className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-accent)] hover:underline">
-            <Download size={12} /> Download
+            <Download size={16} strokeWidth={1.8} /> Download
           </a>
         </>
       ) : (

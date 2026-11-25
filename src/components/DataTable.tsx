@@ -57,7 +57,7 @@ export function DataTable<T>({
               onClick={onAdd}
               className="flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3.5 py-2 text-sm font-semibold text-white hover:opacity-90"
             >
-              <Plus size={16} /> {addLabel ?? 'Add'}
+              <Plus size={16} strokeWidth={1.8} /> {addLabel ?? 'Add'}
             </button>
           )}
         </div>
@@ -114,7 +114,7 @@ export function DataTable<T>({
                               title="View"
                               className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]"
                             >
-                              <Eye size={16} />
+                              <Eye size={16} strokeWidth={1.8} />
                             </button>
                           )}
                           {onEdit && (
@@ -123,7 +123,7 @@ export function DataTable<T>({
                               title="Edit"
                               className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-ink)]"
                             >
-                              <Pencil size={16} />
+                              <Pencil size={16} strokeWidth={1.8} />
                             </button>
                           )}
                           {onDelete && (
