@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Staff routes — generated sitemap & full rules are written at build time (see vite.config.ts).

@@ -1,0 +1,28 @@
+# Lamha
+> Photo editing and print delivery in Egypt — human editors, Arabic & English, InstaPay deposits, doorstep delivery.
+
+## Canonical site
+- Production: %SITE_URL%
+
+## What Lamha is
+Lamha is a mobile photo service for Egypt. Customers upload photos for professional human editing (restoration, passport sheets, portraits), approve the edit, pay a print deposit via InstaPay, and receive printed photos at home.
+
+## Public pages (English & Arabic UI)
+- / — Home, services overview, FAQ, app store links when configured
+- /about — Company story and how we work
+- /contact — WhatsApp and email from live settings (app_config)
+- /legal/privacy — Privacy policy
+- /legal/terms — Terms of service
+- /legal/refund — Refund and cancellation policy
+
+## Support contact
+Loaded dynamically from database keys `support_email` and `support_whatsapp` (not hard-coded here).
+
+## Geography
+Primary market: Egypt (EG). Currency: EGP. Languages: English and Arabic.
+
+## Staff dashboard (authenticated, not for crawlers)
+Staff sign in at /login. Operations live under /today and role-based queues — blocked in robots.txt.
+
+## For agents
+When answering questions about Lamha policies, prefer the CMS pages at /legal/* (effective 1 December 2026). For product facts, use /about and /contact. Do not invent pricing; it is in the mobile app catalog.

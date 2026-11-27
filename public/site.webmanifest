@@ -1,0 +1,30 @@
+{
+  "name": "Lamha",
+  "short_name": "Lamha",
+  "description": "Photo editing and print delivery in Egypt.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf4ff",
+  "theme_color": "#6c358e",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/og.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

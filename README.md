@@ -34,8 +34,10 @@ npm run dev
 1. Push this repo to GitHub (wired to `adham025/lamha-dashboard`).
 2. Vercel → **Add New → Project → Import** `lamha-dashboard`. Framework preset
    auto-detects **Vite** (build `npm run build`, output `dist`).
-3. Add the two env vars above under **Settings → Environment Variables**.
-4. Deploy. `vercel.json` already rewrites all routes to `index.html` for the SPA.
+3. Add env vars under **Settings → Environment Variables**:
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (required)
+   - `VITE_SITE_URL` — your canonical URL (e.g. `https://lamha-zeta.vercel.app`) for link previews & sitemap (optional on Vercel if `VERCEL_URL` is set at build time).
+4. Deploy. `vercel.json` already rewrites all routes to `index.html` for the SPA. Link previews use `public/og.png` + meta tags in `index.html`.
 
 The public Privacy / Terms / Refund pages the app links to are served from this
 site (`/legal/privacy`, `/legal/terms`, `/legal/refund`).
