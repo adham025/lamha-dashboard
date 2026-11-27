@@ -7,8 +7,15 @@
       <stop offset="1" stop-color="#ffcc54" stop-opacity="0.2"/>
     </linearGradient>
   </defs>
-  <g transform="translate(420 115) scale(3.2)">
-    <path fill="#6c358e" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+  <g transform="translate(600 175)">
+    <rect x="-80" y="-80" width="160" height="160" rx="36" fill="#6C358E"/>
+    <g fill="none" stroke="#FFCC54" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 2) scale(0.92)">
+      <path d="M20 35 V23 Q20 20 23 20 H35"/>
+      <path d="M65 20 H77 Q80 20 80 23 V35"/>
+      <path d="M80 65 V77 Q80 80 77 80 H65"/>
+      <path d="M35 80 H23 Q20 80 20 77 V65"/>
+    </g>
+    <circle cx="0" cy="2" r="24" fill="#FFCC54"/>
   </g>
   <text x="600" y="340" text-anchor="middle" font-family="Poppins, system-ui, sans-serif" font-size="72" font-weight="800" fill="#1b2027">Lamha</text>
   <text x="600" y="410" text-anchor="middle" font-family="Poppins, system-ui, sans-serif" font-size="32" font-weight="500" fill="#6c358e">Photo editing &amp; print · Delivered in Egypt</text>
