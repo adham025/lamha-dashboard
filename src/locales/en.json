@@ -1,0 +1,60 @@
+{
+  "lang": { "arabic": "العربية", "english": "English" },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "switchLangAria": "Switch language"
+  },
+  "storeBadges": {
+    "getItOn": "Get it on",
+    "downloadOn": "Download on the"
+  },
+  "hero": {
+    "kicker": "Print studio, delivered",
+    "title": "Your photo perfected.",
+    "titleAccent": "Printed. Delivered.",
+    "body": "Passport sheets, restored memories, and studio portraits — edited by hand, printed with care, brought to your door."
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Choose what you need in the app — restore, documents, portraits, and more."
+  },
+  "faq": {
+    "kicker": "Questions",
+    "title": "Quick answers",
+    "subtitle": "How Lamha works — deposits, human editing, printing, and delivery."
+  },
+  "download": {
+    "title": "Download Lamha",
+    "body": "Store links go live when we publish — badges work as soon as you add URLs in Settings.",
+    "label": "Download the app"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "refunds": "Refunds"
+  },
+  "about": {
+    "eyebrow": "About",
+    "subtitle": "Human editing, partner-lab print, and delivery in one app."
+  },
+  "legal": {
+    "subtitle": "Please read this carefully. Arabic and English versions are both available."
+  },
+  "contact": {
+    "title": "Contact us",
+    "subtitle": "We reply on WhatsApp in Arabic or English.",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "emailPlaceholder": "Support email"
+  },
+  "cards": {
+    "restore": { "title": "Restore old photos", "blurb": "Scratches, creases, and fading on family prints." },
+    "passport": { "title": "Passport & national ID", "blurb": "Official size, white background, ready to submit." },
+    "retouch": { "title": "Portrait retouch", "blurb": "Natural studio polish — not filters." },
+    "cartoon": { "title": "Cartoon portrait", "blurb": "Fun hand-drawn style, printed." },
+    "headshot": { "title": "Pro headshot", "blurb": "CV and profile-ready." },
+    "wedding": { "title": "Wedding glam", "blurb": "Real wedding photos, studio-quality retouch." }
+  }
+}

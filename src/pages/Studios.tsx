@@ -5,44 +5,50 @@ import { DataTable, type Column } from '../components/DataTable'
 import { FormDrawer, type Field, type FormValues } from '../components/FormDrawer'
 import { supabase } from '../lib/supabase'
 import { fetchStaff, type StaffMember } from '../lib/db'
-import type { StaffRole } from '../lib/nav'
+import { useStaffPermissions } from '../context/StaffPermissions'
 
-const roleLabel: Record<StaffRole, string> = {
-  super_admin: 'Owner (everything)',
-  studio: 'Editing (studio runs)',
-  support: 'Payments & support',
-  print_ops: 'Print & delivery',
+type RoleOpt = { id: string; name: string }
+
+const fetchRoleOptions = async () => {
+  const { data, error } = await supabase.from('staff_roles').select('id, name').order('sort')
+  if (error) throw error
+  return (data ?? []) as RoleOpt[]
 }
-const roleOptions = (Object.keys(roleLabel) as StaffRole[]).map((r) => ({ value: r, label: roleLabel[r] }))
-
-const ADD_FIELDS: Field[] = [
-  { name: 'full_name', label: 'Full name', required: true, colSpan: 2 },
-  { name: 'email', label: 'Email', required: true },
-  { name: 'password', label: 'Temporary password', type: 'password', required: true },
-  { name: 'role', label: 'Role', type: 'select', required: true, colSpan: 2, options: roleOptions },
-]
-const EDIT_FIELDS: Field[] = [
-  { name: 'full_name', label: 'Full name', colSpan: 2 },
-  { name: 'role', label: 'Role', type: 'select', required: true, colSpan: 2, options: roleOptions },
-  { name: 'active', label: 'Active', type: 'switch' },
-]
 
 export default function Studios() {
+  const { can } = useStaffPermissions()
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['staff'], queryFn: fetchStaff })
+  const roles = useQuery({ queryKey: ['staff_roles'], queryFn: fetchRoleOptions })
   const [mode, setMode] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<StaffMember | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const roleOptions = (roles.data ?? []).map((r) => ({ value: r.id, label: r.name }))
+  const roleLabel = Object.fromEntries((roles.data ?? []).map((r) => [r.id, r.name]))
+
   const close = () => { setMode(null); setEditing(null); setError(null) }
+
+  const ADD_FIELDS: Field[] = [
+    { name: 'full_name', label: 'Full name', required: true, colSpan: 2 },
+    { name: 'email', label: 'Email', required: true },
+    { name: 'password', label: 'Temporary password', type: 'password', required: true },
+    { name: 'role', label: 'Role', type: 'select', required: true, colSpan: 2, options: roleOptions },
+  ]
+  const EDIT_FIELDS: Field[] = [
+    { name: 'full_name', label: 'Full name', colSpan: 2 },
+    { name: 'role', label: 'Role', type: 'select', required: true, colSpan: 2, options: roleOptions },
+    { name: 'active', label: 'Active', type: 'switch' },
+  ]
 
   const save = useMutation({
     mutationFn: async (v: FormValues) => {
       if (mode === 'add') {
-        const { error } = await supabase.functions.invoke('create-staff', {
+        const { data: fnData, error } = await supabase.functions.invoke('create-staff', {
           body: { email: v.email, password: v.password, full_name: v.full_name, role: v.role },
         })
         if (error) throw error
+        if (fnData?.error) throw new Error(fnData.error)
       } else {
         const { error } = await supabase.from('staff')
           .update({ full_name: v.full_name, role: v.role, active: v.active })
@@ -71,22 +77,26 @@ export default function Studios() {
   const columns: Column<StaffMember>[] = [
     { header: 'Name', render: (s) => <span className="font-medium">{s.full_name || '—'}</span> },
     { header: 'Email', render: (s) => <span className="text-[var(--color-muted)]">{s.email}</span> },
-    { header: 'Role', render: (s) => <span className="font-medium">{roleLabel[s.role]}</span> },
+    { header: 'Role', render: (s) => <span className="font-medium">{roleLabel[s.role] ?? s.role}</span> },
     { header: 'Status', render: (s) => <span className={'text-sm font-medium ' + (s.active ? 'text-[var(--color-success)]' : 'text-[var(--color-muted)]')}>{s.active ? 'Active' : 'Disabled'}</span> },
   ]
 
+  if (!can('team', 'list')) {
+    return <div className="p-6 text-sm text-[var(--color-muted)]">You do not have permission to manage team accounts.</div>
+  }
+
   return (
     <div>
-      <PageHeader title="Team" subtitle="Create logins for the people who run orders. Each role only sees what it needs: payments, editing, or print & delivery." />
+      <PageHeader title="Team" subtitle="Dashboard logins. Pick a role — permissions are configured under Roles and Role permissions." />
       <DataTable
         rows={data ?? []}
         getId={(s) => s.id}
         columns={columns}
         loading={isLoading}
-        addLabel="New account"
-        onAdd={() => { setError(null); setMode('add') }}
-        onEdit={(s) => { setError(null); setEditing(s); setMode('edit') }}
-        onDelete={(ids) => del.mutate(ids)}
+        addLabel={can('team', 'create') ? 'New account' : undefined}
+        onAdd={can('team', 'create') ? () => { setError(null); setMode('add') } : undefined}
+        onEdit={can('team', 'edit') ? (s) => { setError(null); setEditing(s); setMode('edit') } : undefined}
+        onDelete={can('team', 'delete') ? (ids) => del.mutate(ids) : undefined}
         emptyText="No staff yet."
       />
       <FormDrawer

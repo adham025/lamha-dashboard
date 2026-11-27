@@ -2,12 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { PageHeader, Panel, StatCard } from '../components/ui'
 import { fetchOrdersFull } from '../lib/orders'
-import { canAccess, nav, type StaffRole } from '../lib/nav'
+import { canAccess, nav } from '../lib/nav'
+import { useStaffPermissions } from '../context/StaffPermissions'
 
 const EGP = (n: number) => `EGP ${Math.round(n).toLocaleString()}`
 
 /** What needs doing right now, as a to-do list of the queues. */
-export default function Overview({ role }: { role: StaffRole }) {
+export default function Overview() {
+  const { can } = useStaffPermissions()
   const orders = useQuery({ queryKey: ['orders', 'all'], queryFn: () => fetchOrdersFull(), refetchInterval: 30_000 })
   const all = orders.data ?? []
   const count = (...statuses: string[]) => all.filter((o) => statuses.includes(o.status)).length
@@ -21,7 +23,7 @@ export default function Overview({ role }: { role: StaffRole }) {
     { to: '/print', label: 'Out for delivery', n: count('in_production', 'shipped'), hint: 'printing or on the road' },
   ].filter((t) => {
     const item = nav.find((n) => n.to === t.to)
-    return item ? canAccess(item, role) : true
+    return item ? canAccess(item, can) : true
   })
 
   const inEditing = count('editing')

@@ -21,7 +21,7 @@ npm run dev
 
 | Var | Value |
 |-----|-------|
-| `VITE_SUPABASE_URL` | `https://sqfaiygsfphheoauxrpu.supabase.co` |
+| `VITE_SUPABASE_URL` | `https://mqxedyzvyumlahfnpuwb.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | the project **anon** key (public, RLS-protected) |
 
 > Only the anon key belongs here. The `service_role` key must never reach the

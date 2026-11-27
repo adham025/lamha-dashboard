@@ -1,6 +1,4 @@
 import { supabase } from './supabase'
-import type { StaffRole } from './nav'
-
 export type Profile = {
   id: string
   display_name: string | null
@@ -15,7 +13,7 @@ export type StaffMember = {
   id: string
   email: string
   full_name: string | null
-  role: StaffRole
+  role: string
   active: boolean
   created_at: string
 }
@@ -93,10 +91,78 @@ export const fetchConfig = () =>
   )
 
 export async function updateConfig(key: string, value: string) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('app_config')
     .update({ value, updated_at: new Date().toISOString() })
     .eq('key', key)
+    .select('key')
+    .maybeSingle()
+  if (error) throw error
+  if (!data) {
+    throw new Error(
+      `Could not save “${key}”. Check that you have Settings → edit permission, or ask an owner to apply migration 0026.`,
+    )
+  }
+}
+
+export type CmsPageRow = {
+  slug: string
+  grp: string
+  title_en: string
+  title_ar: string
+  body_en: string
+  body_ar: string
+  effective_date: string | null
+  sort: number
+  updated_at: string
+}
+
+export const fetchCmsPages = () =>
+  unwrap<CmsPageRow[]>(
+    supabase
+      .from('cms_pages')
+      .select('slug, grp, title_en, title_ar, body_en, body_ar, effective_date, sort, updated_at')
+      .order('sort', { ascending: true }),
+  )
+
+export type FaqRow = {
+  id: string
+  question_en: string
+  question_ar: string
+  answer_en: string
+  answer_ar: string
+  sort: number
+  active: boolean
+  updated_at: string
+}
+
+export const fetchFaqItems = () =>
+  unwrap<FaqRow[]>(
+    supabase
+      .from('faq_items')
+      .select('id, question_en, question_ar, answer_en, answer_ar, sort, active, updated_at')
+      .order('sort', { ascending: true }),
+  )
+
+export async function updateFaqItem(
+  id: string,
+  patch: Partial<Pick<FaqRow, 'question_en' | 'question_ar' | 'answer_en' | 'answer_ar' | 'sort' | 'active'>>,
+) {
+  const { error } = await supabase
+    .from('faq_items')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function updateCmsPage(
+  slug: string,
+  patch: Partial<Pick<CmsPageRow, 'title_en' | 'title_ar' | 'body_en' | 'body_ar' | 'effective_date'>>,
+) {
+  const { error } = await supabase
+    .from('cms_pages')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('slug', slug)
   if (error) throw error
 }
 

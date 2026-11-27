@@ -82,8 +82,8 @@ export default function PrivacyPolicy() {
     <LegalLayout
       titleEn="Privacy Policy"
       titleAr="سياسة الخصوصية"
-      effectiveDateEn="[EFFECTIVE DATE]"
-      effectiveDateAr="[تاريخ السريان]"
+      effectiveDateEn="1 December 2026"
+      effectiveDateAr="1 ديسمبر 2026"
       contentEn={en}
       contentAr={ar}
     />

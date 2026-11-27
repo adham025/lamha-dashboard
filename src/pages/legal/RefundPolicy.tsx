@@ -50,8 +50,8 @@ export default function RefundPolicy() {
     <LegalLayout
       titleEn="Refund & Cancellation Policy"
       titleAr="سياسة الاسترجاع والإلغاء"
-      effectiveDateEn="[EFFECTIVE DATE]"
-      effectiveDateAr="[تاريخ السريان]"
+      effectiveDateEn="1 December 2026"
+      effectiveDateAr="1 ديسمبر 2026"
       contentEn={en}
       contentAr={ar}
     />

@@ -3,8 +3,9 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import { PageHeader, Panel, StatCard } from '../components/ui'
 import { supabase } from '../lib/supabase'
 import {
-  ALL_STATUSES, STATUS_LABEL, SERVICE_LABEL, fetchOrdersFull, one, type OrderFull,
+  ALL_STATUSES, STATUS_LABEL, fetchOrdersFull, one, type OrderFull,
 } from '../lib/orders'
+import { labelFor, useServiceLabels } from '../lib/serviceLabels'
 
 const EGP = (n: number) => `${Math.round(n).toLocaleString()} EGP`
 const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
@@ -38,6 +39,7 @@ function avgHours(orders: OrderFull[], events: { order_id: string; kind: string;
 const fmtHours = (h: number | null) => (h == null ? '—' : h < 48 ? `${h.toFixed(1)} h` : `${(h / 24).toFixed(1)} days`)
 
 export default function Reports() {
+  const serviceLabels = useServiceLabels().data
   const orders = useQuery({ queryKey: ['orders', 'all'], queryFn: () => fetchOrdersFull() })
   const events = useQuery({ queryKey: ['milestones'], queryFn: fetchMilestones })
   const all = orders.data ?? []
@@ -139,7 +141,7 @@ export default function Reports() {
             <tbody>
               {[...bySvc].sort((a, b) => b[1].photos - a[1].photos).map(([k, v]) => (
                 <tr key={k} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="py-2">{SERVICE_LABEL[k] ?? k}</td>
+                  <td className="py-2">{labelFor(serviceLabels, k)}</td>
                   <td className="py-2 text-right tabular-nums">{v.photos}</td>
                   <td className="py-2 text-right tabular-nums">{EGP(v.revenue)}</td>
                 </tr>

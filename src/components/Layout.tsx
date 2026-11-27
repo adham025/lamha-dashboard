@@ -1,26 +1,21 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { nav, canAccess } from '../lib/nav'
+import { useStaffPermissions } from '../context/StaffPermissions'
 import type { StaffMember } from '../lib/db'
 import { supabase } from '../lib/supabase'
 import { ICON_SIZE_NAV, ICON_STROKE, ICON_STROKE_ACTIVE } from '../lib/icons'
 
-const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Owner',
-  studio: 'Editing',
-  support: 'Payments & support',
-  print_ops: 'Print & delivery',
-}
-
 export default function Layout({ staff }: { staff: StaffMember }) {
   const navigate = useNavigate()
+  const { can, roleName } = useStaffPermissions()
 
   async function signOut() {
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
   }
 
-  const items = nav.filter((n) => canAccess(n, staff.role))
+  const items = nav.filter((n) => canAccess(n, can))
   const initials = (staff.full_name || staff.email)
     .split(/[\s@]/)
     .filter(Boolean)
@@ -41,7 +36,7 @@ export default function Layout({ staff }: { staff: StaffMember }) {
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === '/today'}
               className={({ isActive }) =>
                 clsx(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors',
@@ -73,7 +68,7 @@ export default function Layout({ staff }: { staff: StaffMember }) {
               <div className="truncate text-[13px] font-medium" title={staff.email}>
                 {staff.full_name || staff.email}
               </div>
-              <div className="text-[11px] text-[var(--color-muted)]">{ROLE_LABEL[staff.role] ?? staff.role}</div>
+              <div className="text-[11px] text-[var(--color-muted)]">{roleName}</div>
             </div>
             <button
               onClick={signOut}

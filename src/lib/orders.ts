@@ -39,19 +39,6 @@ export const ALL_STATUSES = Object.keys(STATUS_LABEL)
 const TERMINAL = new Set(['delivered', 'refused', 'cancelled'])
 export const isTerminal = (s: string) => TERMINAL.has(s)
 
-/** Service ids → names (the same services the app lists). */
-export const SERVICE_LABEL: Record<string, string> = {
-  restore: 'Restore an old photo',
-  passport: 'Passport / National ID',
-  glowup: 'Portrait retouch',
-  cartoon: 'Cartoon portrait',
-  headshot: 'Pro headshot',
-  wedding: 'Wedding glam',
-  colorize: 'Colorize',
-  graduation: 'Graduation cutout',
-  background: 'Background swap',
-}
-
 // ---- Types ------------------------------------------------------------------
 
 type One<T> = T | T[] | null

@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/ui'
 import { DataTable, type Column } from '../components/DataTable'
 import { OrderDrawer } from '../components/OrderDrawer'
-import type { StaffRole } from '../lib/nav'
+import { useStaffPermissions } from '../context/StaffPermissions'
+import { labelFor, useServiceLabels } from '../lib/serviceLabels'
 import { deleteRows } from '../lib/db'
 import {
-  ALL_STATUSES, STATUS_LABEL, STATUS_TONE, SERVICE_LABEL, customerName, fetchOrdersFull, one, shortId,
+  ALL_STATUSES, STATUS_LABEL, STATUS_TONE, customerName, fetchOrdersFull, one, shortId,
   type OrderFull,
 } from '../lib/orders'
 
@@ -24,9 +25,9 @@ const chip = (status: string) => (
 
 const code = (o: OrderFull) => <span className="font-mono text-xs">{shortId(o.id)}</span>
 const customer = (o: OrderFull) => <span className="font-medium">{customerName(o)}</span>
-const services = (o: OrderFull) => (
+const ServicesCell = ({ o, labels }: { o: OrderFull; labels?: Record<string, string> }) => (
   <span className="text-[var(--color-muted)]">
-    {[...new Set(o.print_order_items.map((i) => SERVICE_LABEL[i.service_id ?? ''] ?? 'Photo'))].join(', ')}
+    {[...new Set(o.print_order_items.map((i) => labelFor(labels, i.service_id)))].join(', ')}
     {' · '}{o.print_order_items.length} {o.print_order_items.length === 1 ? 'photo' : 'photos'}
   </span>
 )
@@ -62,7 +63,7 @@ const QUEUES: Record<'payments' | 'editing' | 'print', QueueConfig> = {
     columns: [
       { header: 'Order', render: code },
       { header: 'Customer', render: customer },
-      { header: 'What', render: services },
+      { header: 'What', render: () => null },
       { header: 'Status', render: (o) => chip(o.status) },
       { header: 'Studio', render: (o) => <span className="text-[var(--color-muted)]">{one(o.order_internal)?.studio_name ?? '—'}</span> },
       { header: 'Age', render: waiting },
@@ -76,7 +77,7 @@ const QUEUES: Record<'payments' | 'editing' | 'print', QueueConfig> = {
     columns: [
       { header: 'Order', render: code },
       { header: 'Customer', render: customer },
-      { header: 'What', render: services },
+      { header: 'What', render: () => null },
       { header: 'Status', render: (o) => chip(o.status) },
       { header: 'Area', render: (o) => <span className="text-[var(--color-muted)]">{one(o.addresses)?.governorate ?? '—'}</span> },
       { header: 'Cash due', render: (o) => <span className="font-semibold tabular-nums">{EGP(o.balance_due)} EGP</span> },
@@ -84,7 +85,8 @@ const QUEUES: Record<'payments' | 'editing' | 'print', QueueConfig> = {
   },
 }
 
-function Queue({ cfg, role, extraFilters, onDelete }: { cfg: QueueConfig; role: StaffRole; extraFilters?: ReactNode; onDelete?: (ids: string[]) => void }) {
+function Queue({ cfg, extraFilters, onDelete }: { cfg: QueueConfig; extraFilters?: ReactNode; onDelete?: (ids: string[]) => void }) {
+  const labels = useServiceLabels().data
   const [open, setOpen] = useState<string | null>(null)
   const { data, isLoading } = useQuery({
     queryKey: ['orders', cfg.statuses.join(',')],
@@ -97,24 +99,30 @@ function Queue({ cfg, role, extraFilters, onDelete }: { cfg: QueueConfig; role: 
       <DataTable
         rows={data ?? []}
         getId={(o) => o.id}
-        columns={cfg.columns}
+        columns={cfg.columns.map((col) =>
+          col.header === 'What'
+            ? { ...col, render: (o: OrderFull) => <ServicesCell o={o} labels={labels} /> }
+            : col,
+        )}
         loading={isLoading}
         filters={extraFilters}
         onView={(o) => setOpen(o.id)}
         onDelete={onDelete}
         emptyText={cfg.empty}
       />
-      <OrderDrawer orderId={open} role={role} onClose={() => setOpen(null)} />
+      <OrderDrawer orderId={open}  onClose={() => setOpen(null)} />
     </div>
   )
 }
 
-export const Payments = ({ role }: { role: StaffRole }) => <Queue cfg={QUEUES.payments} role={role} />
-export const Editing = ({ role }: { role: StaffRole }) => <Queue cfg={QUEUES.editing} role={role} />
-export const PrintDelivery = ({ role }: { role: StaffRole }) => <Queue cfg={QUEUES.print} role={role} />
+export const Payments = () => <Queue cfg={QUEUES.payments} />
+export const Editing = () => <Queue cfg={QUEUES.editing} />
+export const PrintDelivery = () => <Queue cfg={QUEUES.print} />
 
 /** Every order, any status — the place to look something up. */
-export function AllOrders({ role }: { role: StaffRole }) {
+export function AllOrders() {
+  const { can } = useStaffPermissions()
+  const labels = useServiceLabels().data
   const qc = useQueryClient()
   const [open, setOpen] = useState<string | null>(null)
   const [status, setStatus] = useState('all')
@@ -135,7 +143,7 @@ export function AllOrders({ role }: { role: StaffRole }) {
   const columns: Column<OrderFull>[] = [
     { header: 'Order', render: code },
     { header: 'Customer', render: customer },
-    { header: 'What', render: services },
+    { header: 'What', render: (o) => <ServicesCell o={o} labels={labels} /> },
     { header: 'Status', render: (o) => chip(o.status) },
     { header: 'Total', render: (o) => <span className="tabular-nums">{EGP(o.product_total)}</span> },
     { header: 'Placed', render: (o) => <span className="text-[var(--color-muted)]">{new Date(o.created_at).toLocaleDateString('en-GB')}</span> },
@@ -162,10 +170,10 @@ export function AllOrders({ role }: { role: StaffRole }) {
           </select>
         }
         onView={(o) => setOpen(o.id)}
-        onDelete={role === 'super_admin' ? (ids) => del.mutate(ids) : undefined}
+        onDelete={can('orders', 'bulk_delete') ? (ids) => del.mutate(ids) : undefined}
         emptyText="No orders."
       />
-      <OrderDrawer orderId={open} role={role} onClose={() => setOpen(null)} />
+      <OrderDrawer orderId={open}  onClose={() => setOpen(null)} />
     </div>
   )
 }

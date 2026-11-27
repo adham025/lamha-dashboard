@@ -12,35 +12,45 @@ import {
   Building2,
   Settings,
   Bell,
+  KeyRound,
+  ShieldCheck,
+  FileText,
   type LucideIcon,
 } from 'lucide-react'
+import type { PermAction } from './permissions'
 
-export type StaffRole = 'super_admin' | 'studio' | 'support' | 'print_ops'
+export type StaffRole = string
 
 export type NavItem = {
   to: string
   label: string
   icon: LucideIcon
-  /** Roles allowed to see this section. Omit = all staff. */
-  roles?: StaffRole[]
+  /** Permission resource — needs `list` to show in the sidebar (Zad-style). */
+  resource: string
 }
 
 export const nav: NavItem[] = [
-  { to: '/', label: 'Today', icon: LayoutDashboard },
-  { to: '/payments', label: 'Payments', icon: Wallet, roles: ['super_admin', 'support'] },
-  { to: '/editing', label: 'Editing', icon: Brush, roles: ['super_admin', 'studio'] },
-  { to: '/print', label: 'Print & delivery', icon: Truck, roles: ['super_admin', 'print_ops'] },
-  { to: '/orders', label: 'All orders', icon: Package },
-  { to: '/users', label: 'Customers', icon: Users, roles: ['super_admin', 'studio', 'support'] },
-  { to: '/moderation', label: 'Uploads', icon: ShieldAlert, roles: ['super_admin', 'studio', 'support'] },
-  { to: '/catalogue', label: 'Services & prices', icon: Tags, roles: ['super_admin'] },
-  { to: '/discounts', label: 'Discounts', icon: Ticket, roles: ['super_admin', 'support'] },
-  { to: '/notifications', label: 'Notifications', icon: Bell, roles: ['super_admin', 'support'] },
-  { to: '/reports', label: 'Reports', icon: BarChart3, roles: ['super_admin'] },
-  { to: '/studios', label: 'Team', icon: Building2, roles: ['super_admin'] },
-  { to: '/settings', label: 'Settings', icon: Settings, roles: ['super_admin'] },
+  { to: '/today', label: 'Today', icon: LayoutDashboard, resource: 'overview' },
+  { to: '/payments', label: 'Payments', icon: Wallet, resource: 'payments' },
+  { to: '/editing', label: 'Editing', icon: Brush, resource: 'editing' },
+  { to: '/print', label: 'Print & delivery', icon: Truck, resource: 'print' },
+  { to: '/orders', label: 'All orders', icon: Package, resource: 'orders' },
+  { to: '/users', label: 'Customers', icon: Users, resource: 'users' },
+  { to: '/moderation', label: 'Uploads', icon: ShieldAlert, resource: 'moderation' },
+  { to: '/catalogue', label: 'Services & prices', icon: Tags, resource: 'catalogue' },
+  { to: '/discounts', label: 'Discounts', icon: Ticket, resource: 'discounts' },
+  { to: '/notifications', label: 'Notifications', icon: Bell, resource: 'notifications' },
+  { to: '/reports', label: 'Reports', icon: BarChart3, resource: 'reports' },
+  { to: '/studios', label: 'Team', icon: Building2, resource: 'team' },
+  { to: '/roles', label: 'Roles', icon: KeyRound, resource: 'roles' },
+  { to: '/roles-permissions', label: 'Permissions', icon: ShieldCheck, resource: 'role_permissions' },
+  { to: '/settings', label: 'Settings', icon: Settings, resource: 'settings' },
+  { to: '/site', label: 'Legal & site', icon: FileText, resource: 'site' },
 ]
 
-export function canAccess(item: NavItem, role: StaffRole): boolean {
-  return !item.roles || item.roles.includes(role)
+export function canAccess(
+  item: NavItem,
+  check: (resource: string, action: PermAction) => boolean,
+): boolean {
+  return check(item.resource, 'list')
 }

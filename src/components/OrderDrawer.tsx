@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Download, Upload } from 'lucide-react'
 import Drawer from './Drawer'
 import { PassportSheet } from './PassportSheet'
-import type { StaffRole } from '../lib/nav'
+import { useStaffPermissions } from '../context/StaffPermissions'
+import { labelFor, useServiceLabels } from '../lib/serviceLabels'
 import {
-  STATUS_LABEL, STATUS_TONE, SERVICE_LABEL, isTerminal, one, shortId, customerName, explain,
+  STATUS_LABEL, STATUS_TONE, isTerminal, one, shortId, customerName, explain,
   fetchOrderFull, fetchOrderEvents, fetchOrderMedia, setStatus, uploadEdited, saveInternal,
   type OrderFull, type OrderItem,
 } from '../lib/orders'
@@ -44,13 +45,13 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
  */
 export function OrderDrawer({
   orderId,
-  role,
   onClose,
 }: {
   orderId: string | null
-  role: StaffRole
   onClose: () => void
 }) {
+  const { can } = useStaffPermissions()
+  const serviceLabels = useServiceLabels().data
   const qc = useQueryClient()
   const open = !!orderId
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => fetchOrderFull(orderId!), enabled: open })
@@ -77,10 +78,9 @@ export function OrderDrawer({
     onError: (e) => setError(explain(e)),
   })
 
-  const isAdmin = role === 'super_admin'
-  const canReview = role === 'support' || isAdmin
-  const canEdit = role === 'studio' || isAdmin
-  const canPrint = role === 'print_ops' || isAdmin
+  const canReview = can('payments', 'edit')
+  const canEdit = can('editing', 'edit')
+  const canPrint = can('print', 'edit')
 
   const lastRevision = [...(events.data ?? [])].reverse().find((e) => e.kind === 'revision_requested')
   /** After a change request, every photo needs a file uploaded *after* the request. */
@@ -154,6 +154,7 @@ export function OrderDrawer({
             <div className="space-y-4">
               {o.print_order_items.map((it) => (
                 <ItemCard
+                  serviceLabels={serviceLabels}
                   key={it.id}
                   order={o}
                   item={it}
@@ -268,7 +269,7 @@ export function OrderDrawer({
 }
 
 function ItemCard({
-  order, item, originalUrl, resultUrl, canUpload, needsFresh, onUploaded, onError,
+  order, item, originalUrl, resultUrl, canUpload, needsFresh, onUploaded, onError, serviceLabels,
 }: {
   order: OrderFull
   item: OrderItem
@@ -278,6 +279,7 @@ function ItemCard({
   needsFresh: boolean
   onUploaded: () => void
   onError: (m: string) => void
+  serviceLabels?: Record<string, string>
 }) {
   const upload = useMutation({
     mutationFn: (file: File) => uploadEdited(order, item, file),
@@ -289,7 +291,7 @@ function ItemCard({
   return (
     <div className="rounded-xl border border-[var(--color-border)] p-3">
       <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="font-semibold">{SERVICE_LABEL[item.service_id ?? ''] ?? item.service_id ?? 'Photo'}</span>
+        <span className="font-semibold">{labelFor(serviceLabels, item.service_id)}</span>
         <span className="text-[var(--color-muted)]">{item.size_id} · {item.finish ?? '—'} · ×{item.quantity}</span>
       </div>
       {item.note && <p className="mb-2 rounded-lg bg-[var(--color-bg)] px-3 py-2 text-sm">“{item.note}”</p>}

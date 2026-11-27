@@ -10,7 +10,11 @@ import Overview from './pages/Overview'
 import Users from './pages/Users'
 import Studios from './pages/Studios'
 import Catalogue from './pages/Catalogue'
+import Roles from './pages/Roles'
+import RolesPermissions from './pages/RolesPermissions'
 import Reports from './pages/Reports'
+import SiteContent from './pages/SiteContent'
+import { StaffPermissionsProvider, useStaffPermissions } from './context/StaffPermissions'
 import { Payments, Editing, PrintDelivery, AllOrders } from './pages/queues'
 import {
   Moderation,
@@ -18,15 +22,32 @@ import {
   Notifications,
   Settings,
 } from './pages/sections'
-import PrivacyPolicy from './pages/legal/PrivacyPolicy'
-import TermsOfService from './pages/legal/TermsOfService'
-import RefundPolicy from './pages/legal/RefundPolicy'
 import { canAccess, nav } from './lib/nav'
+import PublicShell from './components/landing/PublicShell'
+import LandingPage from './pages/landing/LandingPage'
+import CmsDocumentPage from './pages/landing/CmsDocumentPage'
+import ContactPage from './pages/landing/ContactPage'
+
+const PUBLIC_PATHS = new Set(['/', '/about', '/contact', '/login'])
+
+function PublicRoutes() {
+  return (
+    <Routes>
+      <Route element={<PublicShell />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<CmsDocumentPage slug="about" />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/legal/:slug" element={<CmsDocumentPage />} />
+      </Route>
+      <Route path="/login" element={<Login />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
 
 export default function App() {
   const location = useLocation()
   const [session, setSession] = useState<Session | null>(null)
-  // undefined = role not resolved yet; null = resolved and NOT staff.
   const [staff, setStaff] = useState<StaffMember | null | undefined>(undefined)
   const [ready, setReady] = useState(false)
 
@@ -39,15 +60,13 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  // Once signed in, resolve the staff record (role). RLS returns only the
-  // caller's own row, so a non-staff account gets nothing → NotAuthorized.
   useEffect(() => {
     if (!session) {
       setStaff(undefined)
       return
     }
     let cancelled = false
-    setStaff(undefined) // show the loader while (re)checking, never the no-access flash
+    setStaff(undefined)
     fetchStaff()
       .then((rows) => {
         if (cancelled) return
@@ -65,47 +84,48 @@ export default function App() {
     </div>
   )
 
-  // Public legal pages — opened straight from the mobile app, no auth, no
-  // Supabase round-trip, checked before any of the session/staff gating below.
-  if (location.pathname === '/legal/privacy') return <PrivacyPolicy />
-  if (location.pathname === '/legal/terms') return <TermsOfService />
-  if (location.pathname === '/legal/refund') return <RefundPolicy />
+  const isPublic =
+    PUBLIC_PATHS.has(location.pathname) || location.pathname.startsWith('/legal/')
 
-  if (!ready) return Loader
+  if (!ready) return isPublic ? <PublicRoutes /> : Loader
 
-  if (!session) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    )
-  }
+  if (!session) return <PublicRoutes />
 
-  // Signed in, role still being fetched — show the loader, not the no-access screen.
-  if (staff === undefined) return Loader
+  if (staff === undefined) return isPublic ? <PublicRoutes /> : Loader
 
-  // Resolved and definitely not a staff account.
   if (staff === null) {
+    if (isPublic) return <PublicRoutes />
     return <NotAuthorized email={session.user.email ?? ''} />
   }
 
-  const role = staff.role
+  return (
+    <StaffPermissionsProvider staff={staff}>
+      <AuthenticatedRoutes staff={staff} />
+    </StaffPermissionsProvider>
+  )
+}
+
+const STAFF_HOME = '/today'
+
+function AuthenticatedRoutes({ staff }: { staff: StaffMember }) {
+  const { can } = useStaffPermissions()
   const allowed = (to: string) => {
     const item = nav.find((n) => n.to === to)
-    return item ? canAccess(item, role) : true
+    return item ? canAccess(item, can) : true
   }
   const guard = (to: string, el: React.ReactNode) =>
-    allowed(to) ? el : <Navigate to="/" replace />
+    allowed(to) ? el : <Navigate to={STAFF_HOME} replace />
 
   return (
     <Routes>
+      <Route path="/" element={<Navigate to={STAFF_HOME} replace />} />
+      <Route path="/login" element={<Navigate to={STAFF_HOME} replace />} />
       <Route element={<Layout staff={staff} />}>
-        <Route path="/" element={<Overview role={role} />} />
-        <Route path="/payments" element={guard('/payments', <Payments role={role} />)} />
-        <Route path="/editing" element={guard('/editing', <Editing role={role} />)} />
-        <Route path="/print" element={guard('/print', <PrintDelivery role={role} />)} />
-        <Route path="/orders" element={<AllOrders role={role} />} />
+        <Route path="/today" element={<Overview />} />
+        <Route path="/payments" element={guard('/payments', <Payments />)} />
+        <Route path="/editing" element={guard('/editing', <Editing />)} />
+        <Route path="/print" element={guard('/print', <PrintDelivery />)} />
+        <Route path="/orders" element={guard('/orders', <AllOrders />)} />
         <Route path="/users" element={guard('/users', <Users />)} />
         <Route path="/moderation" element={guard('/moderation', <Moderation />)} />
         <Route path="/catalogue" element={guard('/catalogue', <Catalogue />)} />
@@ -113,9 +133,11 @@ export default function App() {
         <Route path="/discounts" element={guard('/discounts', <Discounts />)} />
         <Route path="/notifications" element={guard('/notifications', <Notifications />)} />
         <Route path="/studios" element={guard('/studios', <Studios />)} />
+        <Route path="/roles" element={guard('/roles', <Roles />)} />
+        <Route path="/roles-permissions" element={guard('/roles-permissions', <RolesPermissions />)} />
         <Route path="/settings" element={guard('/settings', <Settings />)} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/site" element={guard('/site', <SiteContent />)} />
+        <Route path="*" element={<Navigate to={STAFF_HOME} replace />} />
       </Route>
     </Routes>
   )

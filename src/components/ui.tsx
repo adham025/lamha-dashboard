@@ -2,11 +2,22 @@ import type { ReactNode } from 'react'
 import { clsx } from 'clsx'
 import { Trash2, X } from 'lucide-react'
 
-export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+export function PageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string
+  subtitle?: string
+  action?: ReactNode
+}) {
   return (
-    <div className="mb-6">
-      <h1 className="text-[22px] font-semibold tracking-tight text-[var(--color-ink)]">{title}</h1>
-      {subtitle && <p className="mt-1 text-sm text-[var(--color-muted)]">{subtitle}</p>}
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 className="text-[22px] font-semibold tracking-tight text-[var(--color-ink)]">{title}</h1>
+        {subtitle && <p className="mt-1 max-w-2xl text-sm text-[var(--color-muted)]">{subtitle}</p>}
+      </div>
+      {action}
     </div>
   )
 }
